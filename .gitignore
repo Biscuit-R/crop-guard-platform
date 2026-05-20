@@ -30,8 +30,21 @@ frontend/dist/
 backend/static/uploads/
 backend/static/results/
 
+# Temp files
+backend/temp/
+
 # Storage
 storage/
 
 # YOLO runs
 backend/runs/
+training/runs/
+
+# Training data & datasets
+database/images/
+database/labels/
+database/filtered_dataset/
+*.zip
+
+# Model weights (large binary files)
+backend/models/*.pt

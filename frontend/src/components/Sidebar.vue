@@ -11,15 +11,56 @@
     </div>
 
     <div class="nav-menu">
-      <div
-        v-for="item in menuList"
-        :key="item.path"
-        class="nav-item"
-        :class="{ active: currentPath === item.path }"
-        @click="handleMenuClick(item)"
-      >
-        <el-icon :size="18" class="nav-icon"><component :is="item.icon" /></el-icon>
-        <span class="nav-text">{{ item.name }}</span>
+      <!-- 核心功能区 -->
+      <div class="menu-section">
+        <div class="menu-section-title">核心功能</div>
+        <div
+          v-for="item in mainMenuList"
+          :key="item.path"
+          class="nav-item"
+          :class="{ active: currentPath === item.path }"
+          @click="handleMenuClick(item)"
+        >
+          <el-icon :size="18" class="nav-icon"><component :is="item.icon" /></el-icon>
+          <span class="nav-text">{{ item.name }}</span>
+        </div>
+      </div>
+
+      <!-- 分隔线 -->
+      <div class="menu-divider"></div>
+
+      <!-- 高级功能区 -->
+      <div class="menu-section">
+        <div class="menu-section-title">
+          <span>高级功能</span>
+          <el-tag size="small" type="warning" effect="plain" class="beta-tag">Beta</el-tag>
+        </div>
+        <div
+          v-for="item in advancedMenuList"
+          :key="item.path"
+          class="nav-item advanced"
+          :class="{ active: isActive(item) }"
+          @click="handleMenuClick(item)"
+        >
+          <el-icon :size="18" class="nav-icon"><component :is="item.icon" /></el-icon>
+          <span class="nav-text">{{ item.name }}</span>
+          <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
+        </div>
+      </div>
+
+      <!-- 分隔线 -->
+      <div class="menu-divider"></div>
+
+      <!-- 个人中心 -->
+      <div class="menu-section">
+        <div
+          class="nav-item"
+          :class="{ active: currentPath === '/profile' }"
+          @click="handleMenuClick(profileMenu)"
+        >
+          <el-icon :size="18" class="nav-icon"><component :is="profileMenu.icon" /></el-icon>
+          <span class="nav-text">{{ profileMenu.name }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -35,12 +76,15 @@ import {
   Clock,
   Collection,
   User,
+  SetUp,
+  Operation,
 } from "@element-plus/icons-vue";
 
 const router = useRouter();
 const route = useRoute();
 
-const menuList = [
+// 核心功能菜单
+const mainMenuList = [
   {
     name: "数据看板",
     icon: DataLine,
@@ -61,14 +105,47 @@ const menuList = [
     icon: Collection,
     path: "/guide",
   },
-  {
-    name: "个人中心",
-    icon: User,
-    path: "/profile",
-  },
 ];
 
+// 高级功能菜单
+const advancedMenuList = [
+  {
+    name: "高级功能",
+    icon: Operation,
+    path: "/tools",
+    badge: null,
+  },
+  // 后续可扩展：
+  // {
+  //   name: "模型训练",
+  //   icon: Cpu,
+  //   path: "/tools/training",
+  //   badge: "开发中",
+  // },
+  // {
+  //   name: "批量检测",
+  //   icon: Files,
+  //   path: "/tools/batch",
+  //   badge: null,
+  // },
+];
+
+// 个人中心菜单
+const profileMenu = {
+  name: "个人中心",
+  icon: User,
+  path: "/profile",
+};
+
 const currentPath = computed(() => route.path);
+
+// 判断菜单项是否激活（支持嵌套路由）
+const isActive = (item) => {
+  if (item.path === "/tools") {
+    return route.path.startsWith("/tools");
+  }
+  return route.path === item.path;
+};
 
 const handleMenuClick = (item) => {
   router.push(item.path);
@@ -124,16 +201,44 @@ const handleMenuClick = (item) => {
 
 .nav-menu {
   flex: 1;
-  padding: 16px 12px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.menu-section {
+  margin-bottom: 4px;
+}
+
+.menu-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.beta-tag {
+  font-size: 10px;
+  transform: scale(0.9);
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 8px 12px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   flex-direction: row;
-  padding: 14px 12px;
+  padding: 12px;
   border-radius: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
@@ -155,15 +260,33 @@ const handleMenuClick = (item) => {
   color: var(--primary-color);
 }
 
+.nav-item.advanced {
+  opacity: 0.85;
+}
+
+.nav-item.advanced:hover {
+  opacity: 1;
+}
+
 .nav-icon {
   font-size: 18px;
-  margin-right: 12px;
+  margin-right: 10px;
   color: var(--text-secondary);
   flex-shrink: 0;
 }
 
 .nav-text {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
+  flex: 1;
+}
+
+.nav-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #f59e0b;
+  color: white;
+  border-radius: 10px;
+  font-weight: 500;
 }
 </style>

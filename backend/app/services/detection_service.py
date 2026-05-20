@@ -1,28 +1,186 @@
 import os
+import glob
+import json
 import time
 import uuid
 from datetime import datetime
 from ultralytics import YOLO
 import cv2
 from app.config import settings
-from app.models.schemas import DetectionBox, DetectionResult
+from app.models.schemas import DetectionBox, DetectionResult, ModelInfo, VersionHistoryItem
 from app.utils.file_utils import get_file_url
+
+# 项目根目录
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class DetectionService:
     def __init__(self):
         self.model = None
         self.class_names = {}
-        self._load_model()
+        self.current_model_path = None
+        self.current_model_version = None
+        self.model_mtime = 0.0
+        self._discover_and_load()
 
-    def _load_model(self):
-        if os.path.exists(settings.YOLO_MODEL_PATH):
-            self.model = YOLO(settings.YOLO_MODEL_PATH)
-            self.class_names = self.model.names
+    def _discover_latest_model(self) -> str:
+        """
+        自动发现最新模型，优先级：
+        1. best.pt（训练脚本部署的当前模型）
+        2. 最新的 best_vX.X.X.pt（版本化模型）
+        3. settings.YOLO_MODEL_PATH（配置回退）
+        """
+        models_dir = settings.MODEL_DIR
+
+        best = os.path.join(models_dir, "best.pt")
+        if os.path.exists(best):
+            return best
+
+        versioned = glob.glob(os.path.join(models_dir, "best_v*.pt"))
+        if versioned:
+            return max(versioned, key=os.path.getmtime)
+
+        return settings.YOLO_MODEL_PATH
+
+    def _extract_version(self, path: str) -> str:
+        name = os.path.basename(path)
+        if name == "best.pt":
+            return "latest"
+        if name.startswith("best_v"):
+            return name.replace("best_", "").replace(".pt", "")
+        return os.path.splitext(name)[0]
+
+    def _discover_and_load(self):
+        model_path = self._discover_latest_model()
+        self._load_model(model_path)
+
+    def _load_model(self, model_path: str):
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"模型文件不存在: {model_path}")
+
+        self.model = YOLO(model_path)
+        self.class_names = self.model.names
+        self.current_model_path = model_path
+        self.model_mtime = os.path.getmtime(model_path)
+        self.current_model_version = self._extract_version(model_path)
+
+        print(f"[模型加载] 路径: {model_path}")
+        print(f"[模型加载] 版本: {self.current_model_version}")
+        print(f"[模型加载] 类别数: {len(self.class_names)}")
+
+    def check_and_reload(self) -> bool:
+        """检查模型文件是否更新，如更新则重载。返回是否发生重载。"""
+        model_path = self._discover_latest_model()
+
+        # 模型文件变了（换了一个文件）
+        if os.path.abspath(model_path) != os.path.abspath(self.current_model_path):
+            print(f"[模型更新] 发现新模型文件: {model_path}")
+            self._load_model(model_path)
+            return True
+
+        # 同一文件但内容更新了（mtime 变化）
+        current_mtime = os.path.getmtime(model_path)
+        if current_mtime > self.model_mtime:
+            print(f"[模型更新] 检测到模型文件更新: {model_path}")
+            self._load_model(model_path)
+            return True
+
+        return False
+
+    def reload(self) -> dict:
+        """手动强制重载，返回状态信息"""
+        self._discover_and_load()
+        return self.get_status()
+
+    def get_status(self) -> dict:
+        """返回当前模型状态"""
+        return {
+            "model_path": self.current_model_path,
+            "model_version": self.current_model_version,
+            "model_mtime": datetime.fromtimestamp(self.model_mtime).isoformat() if self.model_mtime else None,
+            "class_count": len(self.class_names),
+            "is_loaded": self.model is not None,
+        }
+
+    def list_models(self) -> list:
+        """列出 models 目录下所有可用模型"""
+        models_dir = settings.MODEL_DIR
+        models = []
+        current_abs = os.path.abspath(self.current_model_path) if self.current_model_path else None
+
+        for f in os.listdir(models_dir):
+            if f.endswith(".pt"):
+                full_path = os.path.join(models_dir, f)
+                version = self._extract_version(full_path)
+                stat = os.stat(full_path)
+                models.append(ModelInfo(
+                    filename=f,
+                    version=version,
+                    size_mb=round(stat.st_size / (1024 * 1024), 2),
+                    modified_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    is_current=os.path.abspath(full_path) == current_abs,
+                ))
+
+        # 按修改时间降序
+        models.sort(key=lambda m: m.modified_at, reverse=True)
+        return models
+
+    def switch_model(self, version: str) -> dict:
+        """
+        切换到指定版本的模型
+
+        Args:
+            version: 版本号（如 v1.0.0）或文件名（如 best.pt、yolo11n.pt）
+        """
+        models_dir = settings.MODEL_DIR
+
+        # 直接文件名匹配
+        if version.endswith(".pt"):
+            target = os.path.join(models_dir, version)
         else:
-            raise FileNotFoundError(f"Model file not found: {settings.YOLO_MODEL_PATH}")
+            # 版本号匹配：best_v1.0.0.pt
+            target = os.path.join(models_dir, f"best_{version}.pt")
+
+        if not os.path.exists(target):
+            # 尝试模糊匹配
+            candidates = glob.glob(os.path.join(models_dir, f"*{version}*.pt"))
+            if candidates:
+                target = candidates[0]
+            else:
+                raise FileNotFoundError(f"未找到版本 {version} 对应的模型文件")
+
+        self._load_model(target)
+        print(f"[模型切换] 已切换到: {target} (版本: {self.current_model_version})")
+        return self.get_status()
+
+    def get_version_history(self) -> list:
+        """读取训练版本历史（从 training/versions.json）"""
+        versions_file = os.path.join(PROJECT_DIR, "training", "versions.json")
+        if not os.path.exists(versions_file):
+            return []
+
+        try:
+            with open(versions_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            history = []
+            for v in data.get("versions", []):
+                history.append(VersionHistoryItem(
+                    version=v.get("version", ""),
+                    created_at=v.get("created_at", ""),
+                    description=v.get("description", ""),
+                    metrics=v.get("metrics", {}),
+                ))
+            history.reverse()  # 最新的在前
+            return history
+        except Exception as e:
+            print(f"[版本历史] 读取失败: {e}")
+            return []
 
     def detect_single_image(self, image_path: str, model_name: str = "pest-v1") -> DetectionResult:
+        # 检测前自动检查模型更新
+        self.check_and_reload()
+
         start_time = time.time()
         detection_id = str(uuid.uuid4())
 

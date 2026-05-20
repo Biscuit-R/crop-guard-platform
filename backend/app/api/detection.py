@@ -7,7 +7,13 @@ from app.utils.auth_utils import get_current_user
 from app.database import get_db
 from app.models.db_models import User, DetectionHistory
 from app.config import settings
-from app.models.schemas import SingleDetectionResponse, PestListResponse, PestItem
+from app.models.schemas import (
+    SingleDetectionResponse, PestListResponse, PestItem,
+    ModelStatusResponse, ModelStatus,
+    ModelListResponse, ModelInfo,
+    ModelSwitchRequest,
+    VersionHistoryResponse, VersionHistoryItem,
+)
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 
@@ -52,6 +58,66 @@ async def detect_single_image(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
+
+
+@router.get("/model/status", response_model=ModelStatusResponse)
+async def get_model_status():
+    """获取当前模型状态"""
+    status = detection_service.get_status()
+    return ModelStatusResponse(
+        success=True,
+        message="获取成功",
+        data=ModelStatus(**status)
+    )
+
+
+@router.post("/model/reload", response_model=ModelStatusResponse)
+async def reload_model():
+    """手动重载模型"""
+    status = detection_service.reload()
+    return ModelStatusResponse(
+        success=True,
+        message="模型已重载",
+        data=ModelStatus(**status)
+    )
+
+
+@router.get("/models", response_model=ModelListResponse)
+async def list_models():
+    """列出所有可用模型版本"""
+    models = detection_service.list_models()
+    return ModelListResponse(
+        success=True,
+        message="获取成功",
+        data=models
+    )
+
+
+@router.post("/models/switch", response_model=ModelStatusResponse)
+async def switch_model(request: ModelSwitchRequest):
+    """切换到指定版本的模型"""
+    try:
+        status = detection_service.switch_model(request.version)
+        return ModelStatusResponse(
+            success=True,
+            message=f"已切换到版本 {status['model_version']}",
+            data=ModelStatus(**status)
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"模型切换失败: {str(e)}")
+
+
+@router.get("/models/history", response_model=VersionHistoryResponse)
+async def get_model_history():
+    """获取训练版本历史"""
+    history = detection_service.get_version_history()
+    return VersionHistoryResponse(
+        success=True,
+        message="获取成功",
+        data=history
+    )
 
 
 @router.get("/pests/list", response_model=PestListResponse)

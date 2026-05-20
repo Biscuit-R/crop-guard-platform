@@ -15,6 +15,7 @@ const routes = [
     name: "注册",
     component: () => import("../views/RegisterPage.vue"),
   },
+  // 核心功能路由
   {
     path: "/dashboard",
     name: "数据看板",
@@ -35,6 +36,29 @@ const routes = [
     name: "病虫害图鉴",
     component: () => import("../views/PestGuidePage.vue"),
   },
+  // 高级功能路由
+  {
+    path: "/tools",
+    name: "高级功能",
+    component: () => import("../views/AdvancedFeaturesPage.vue"),
+  },
+  {
+    path: "/tools/dataset",
+    name: "数据集转化",
+    component: () => import("../views/DatasetToolsPage.vue"),
+  },
+  // 后续可扩展：
+  // {
+  //   path: "/tools/training",
+  //   name: "模型训练",
+  //   component: () => import("../views/ModelTrainingPage.vue"),
+  // },
+  // {
+  //   path: "/tools/batch",
+  //   name: "批量检测",
+  //   component: () => import("../views/BatchDetectionPage.vue"),
+  // },
+  // 个人中心
   {
     path: "/profile",
     name: "个人中心",

@@ -14,7 +14,8 @@ class Settings(BaseModel):
     UPLOAD_DIR: str = "static/uploads"
     RESULT_DIR: str = "static/results"
 
-    YOLO_MODEL_PATH: str = "yolo11n.pt"
+    YOLO_MODEL_PATH: str = "models/yolo11n.pt"
+    MODEL_DIR: str = "models"
     CONFIDENCE_THRESHOLD: float = 0.5
     IOU_THRESHOLD: float = 0.45
 
@@ -30,6 +31,13 @@ class Settings(BaseModel):
     JWT_EXPIRE_MINUTES: int = 1440  # 24小时
 
     CORS_ORIGINS: list = ["http://localhost:5174", "http://localhost:3000"]
+
+    # MinIO 配置
+    MINIO_ENDPOINT: str = "localhost:9002"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_BUCKET: str = "crop-guard-bucket"
+    MINIO_SECURE: bool = False
 
 
 def get_settings() -> Settings:

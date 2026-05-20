@@ -107,3 +107,50 @@ class DashboardStats(BaseModel):
     total_objects: int
     success_rate: float
     active_days: int
+
+
+# ==================== 模型状态 Schema ====================
+
+class ModelStatus(BaseModel):
+    model_path: str
+    model_version: str
+    model_mtime: Optional[str] = None
+    class_count: int
+    is_loaded: bool
+
+
+class ModelStatusResponse(BaseModel):
+    success: bool
+    message: str = ""
+    data: Optional[ModelStatus] = None
+
+
+class ModelInfo(BaseModel):
+    filename: str
+    version: str
+    size_mb: float
+    modified_at: str
+    is_current: bool
+
+
+class ModelListResponse(BaseModel):
+    success: bool
+    message: str = ""
+    data: List[ModelInfo] = []
+
+
+class ModelSwitchRequest(BaseModel):
+    version: str
+
+
+class VersionHistoryItem(BaseModel):
+    version: str
+    created_at: str
+    description: str = ""
+    metrics: Optional[dict] = None
+
+
+class VersionHistoryResponse(BaseModel):
+    success: bool
+    message: str = ""
+    data: List[VersionHistoryItem] = []
