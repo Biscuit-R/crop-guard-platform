@@ -1,0 +1,30 @@
+# FastAPI Web框架
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# 数据库
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Redis缓存
+redis>=5.0.0
+
+# MinIO对象存储
+minio>=7.2.0
+
+# YOLO目标检测与图像处理
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+pillow>=10.0.0
+
+# 认证与安全
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.0.0,<4.1.0
+
+# 工具库
+python-dotenv>=1.0.0
+numpy>=1.23.0,<2.0.0

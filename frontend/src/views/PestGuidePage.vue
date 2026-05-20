@@ -1,0 +1,194 @@
+<template>
+  <div class="pest-guide-page">
+    <div class="page-header">
+      <h1 class="page-title">病虫害图鉴</h1>
+      <p class="page-subtitle">平台支持检测的所有病虫害类别</p>
+    </div>
+
+    <div class="search-container">
+      <el-input v-model="searchQuery" placeholder="搜索病虫害类别..." size="default" class="search-input">
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+    </div>
+
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon pest-icon"><el-icon><Aim /></el-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ totalPests }}</div>
+          <div class="stat-label">病虫害总数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon category-icon"><el-icon><Grid /></el-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ categories.length }}</div>
+          <div class="stat-label">分类数量</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pest-categories">
+      <div v-for="category in filteredCategories" :key="category.id" class="category-card">
+        <div class="category-header">
+          <div class="category-icon" :style="{ backgroundColor: category.color }">
+            <el-icon :size="24" color="white"><component :is="category.icon" /></el-icon>
+          </div>
+          <div class="category-info">
+            <div class="category-name">{{ category.name }}</div>
+            <div class="category-count">{{ category.pests.length }} 种</div>
+          </div>
+        </div>
+        <div class="pest-list">
+          <div v-for="pest in category.pests" :key="pest.id" class="pest-item">
+            <el-icon :size="14" class="pest-item-icon"><CircleCheck /></el-icon>
+            <div class="pest-detail">
+              <span class="pest-name">{{ pest.name }}</span>
+              <span class="pest-desc">{{ pest.description }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="filteredCategories.length === 0" class="empty-state">
+      <el-icon :size="64" class="empty-icon"><Help /></el-icon>
+      <p class="empty-text">未找到匹配的病虫害类别</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from "vue";
+import {
+  Search, Aim, Grid, CircleCheck, Help,
+  Sunny, Warning, FirstAidKit, Opportunity,
+} from "@element-plus/icons-vue";
+
+const searchQuery = ref("");
+
+const categories = ref([
+  {
+    id: 1, name: "真菌病害", icon: Warning, color: "#f59e0b",
+    pests: [
+      { id: 1, name: "叶斑病", description: "叶片出现褐色或黑色斑点，严重时导致叶片枯死" },
+      { id: 2, name: "锈病", description: "叶片背面出现铁锈色孢子堆，影响光合作用" },
+      { id: 3, name: "白粉病", description: "叶片表面覆盖白色粉状霉层" },
+      { id: 4, name: "炭疽病", description: "叶片和果实出现凹陷的黑色病斑" },
+    ],
+  },
+  {
+    id: 2, name: "细菌病害", icon: FirstAidKit, color: "#ef4444",
+    pests: [
+      { id: 5, name: "细菌性斑点", description: "叶片出现水渍状小斑点，后期变为褐色" },
+      { id: 6, name: "软腐病", description: "组织软化腐烂，有恶臭气味" },
+      { id: 7, name: "青枯病", description: "植株迅速萎蔫，维管束变褐" },
+    ],
+  },
+  {
+    id: 3, name: "病毒病害", icon: Opportunity, color: "#8b5cf6",
+    pests: [
+      { id: 8, name: "花叶病毒", description: "叶片出现黄绿相间的花叶症状，植株矮化" },
+      { id: 9, name: "黄化病毒", description: "叶片黄化，植株生长受阻" },
+    ],
+  },
+  {
+    id: 4, name: "虫害", icon: Sunny, color: "#0d9488",
+    pests: [
+      { id: 10, name: "蚜虫", description: "吸食植物汁液，导致叶片卷曲、发黄" },
+      { id: 11, name: "毛虫", description: "啃食叶片，造成缺刻或孔洞" },
+      { id: 12, name: "潜叶蝇", description: "幼虫在叶片内部取食，形成蜿蜒隧道" },
+      { id: 13, name: "红蜘蛛", description: "吸食叶片汁液，出现密集白色小点" },
+    ],
+  },
+]);
+
+const filteredCategories = computed(() => {
+  if (!searchQuery.value) return categories.value;
+  const query = searchQuery.value.toLowerCase();
+  return categories.value.map((category) => ({
+    ...category,
+    pests: category.pests.filter(
+      (pest) => pest.name.toLowerCase().includes(query) || pest.description.toLowerCase().includes(query)
+    ),
+  })).filter((category) => category.name.toLowerCase().includes(query) || category.pests.length > 0);
+});
+
+const totalPests = computed(() => categories.value.reduce((sum, c) => sum + c.pests.length, 0));
+</script>
+
+<style scoped lang="scss">
+.pest-guide-page {
+  width: 100%;
+
+  .page-header {
+    margin-bottom: 24px;
+    .page-title { font-size: 24px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .page-subtitle { font-size: 14px; color: var(--text-secondary); }
+  }
+
+  .search-container { margin-bottom: 24px; .search-input { max-width: 300px; } }
+
+  .stats-cards {
+    display: flex; gap: 20px; margin-bottom: 24px;
+    .stat-card {
+      flex: 1; max-width: 200px; background-color: #ffffff; border-radius: 12px;
+      padding: 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 16px;
+      .stat-icon {
+        width: 50px; height: 50px; border-radius: 12px; display: flex;
+        align-items: center; justify-content: center; color: white; font-size: 24px;
+        &.pest-icon { background: linear-gradient(135deg, #0d9488, #14b8a6); }
+        &.category-icon { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+      }
+      .stat-info {
+        .stat-value { font-size: 24px; font-weight: 600; color: var(--text-primary); }
+        .stat-label { font-size: 13px; color: var(--text-secondary); }
+      }
+    }
+  }
+
+  .pest-categories {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+    .category-card {
+      background-color: #ffffff; border-radius: 12px; padding: 20px;
+      box-shadow: var(--card-shadow); transition: all 0.2s;
+      &:hover { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+
+      .category-header {
+        display: flex; align-items: center; margin-bottom: 16px;
+        .category-icon {
+          width: 50px; height: 50px; border-radius: 12px; display: flex;
+          align-items: center; justify-content: center; margin-right: 16px;
+        }
+        .category-info {
+          .category-name { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+          .category-count { font-size: 13px; color: var(--text-secondary); }
+        }
+      }
+
+      .pest-list {
+        display: flex; flex-direction: column; gap: 10px;
+        .pest-item {
+          display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px;
+          background-color: #f0fdfa; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+          &:hover { background-color: #ccfbf1; }
+          .pest-item-icon { color: #0d9488; margin-top: 2px; flex-shrink: 0; }
+          .pest-detail {
+            display: flex; flex-direction: column;
+            .pest-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+            .pest-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4; }
+          }
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0;
+    .empty-icon { color: #9ca3af; margin-bottom: 16px; }
+    .empty-text { font-size: 15px; color: var(--text-secondary); }
+  }
+}
+</style>

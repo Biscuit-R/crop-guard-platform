@@ -1,0 +1,30 @@
+:root {
+  --primary-color: #0d9488;
+  --primary-light: rgba(13, 148, 136, 0.08);
+  --primary-hover: #0f766e;
+  --success-color: #22c55e;
+  --accent-green: #16a34a;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-primary);
+  background-color: #f0fdfa;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
