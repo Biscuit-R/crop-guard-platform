@@ -1,0 +1,40 @@
+# 精选 30 类主要农作物害虫
+# 用于 YOLO 微调训练
+
+path: /content/database
+train: images/train
+val: images/val
+
+nc: 30
+
+names:
+  0: rice_leaf_roller
+  1: rice_leaf_caterpillar
+  2: paddy_stem_maggot
+  3: asiatic_rice_borer
+  4: yellow_rice_borer
+  5: rice_gall_midge
+  6: Rice_Stemfly
+  7: brown_plant_hopper
+  8: white_backed_plant_hopper
+  9: small_brown_plant_hopper
+  10: rice_water_weevil
+  11: rice_leafhopper
+  12: corn_borer
+  13: army_worm
+  14: aphids
+  15: english_grain_aphid
+  16: black_cutworm
+  17: large_cutworm
+  18: yellow_cutworm
+  19: red_spider
+  20: mole_cricket
+  21: grub
+  22: wireworm
+  23: Prodenia_litura
+  24: beet_army_worm
+  25: cabbage_army_worm
+  26: flea_beetle
+  27: Locustoidea
+  28: blister_beetle
+  29: wheat_sawfly
