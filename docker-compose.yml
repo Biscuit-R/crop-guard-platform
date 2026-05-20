@@ -6,7 +6,7 @@ services:
     image: postgres:15
     container_name: crop-guard-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: crop_user
       POSTGRES_PASSWORD: crop_password
@@ -25,7 +25,7 @@ services:
     image: redis:7
     container_name: crop-guard-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - ./storage/redis/data:/data
     healthcheck:
@@ -39,8 +39,8 @@ services:
     image: minio/minio:latest
     container_name: crop-guard-minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"
+      - "9003:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -49,7 +49,7 @@ services:
       - ./storage/minio/config:/root/.minio
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:9002/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -8,7 +8,7 @@ class Settings(BaseModel):
     DEBUG: bool = True
 
     HOST: str = "0.0.0.0"
-    PORT: int = 8080
+    PORT: int = 8081
 
     STATIC_DIR: str = "static"
     UPLOAD_DIR: str = "static/uploads"
@@ -20,7 +20,7 @@ class Settings(BaseModel):
 
     # 数据库配置
     DB_HOST: str = "localhost"
-    DB_PORT: int = 5432
+    DB_PORT: int = 5433
     DB_USER: str = "crop_user"
     DB_PASSWORD: str = "crop_password"
     DB_NAME: str = "crop_guard_db"
@@ -29,7 +29,7 @@ class Settings(BaseModel):
     JWT_SECRET_KEY: str = "crop-guard-secret-key-change-in-production"
     JWT_EXPIRE_MINUTES: int = 1440  # 24小时
 
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list = ["http://localhost:5174", "http://localhost:3000"]
 
 
 def get_settings() -> Settings:
