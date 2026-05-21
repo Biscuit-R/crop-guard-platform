@@ -2,12 +2,16 @@
 MinIO 对象存储工具
 用于上传和管理模型文件、训练结果等
 """
+import logging
 import os
 import json
+import threading
 from datetime import datetime
 from minio import Minio
 from minio.error import S3Error
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class MinioClient:
@@ -26,9 +30,9 @@ class MinioClient:
         try:
             if not self.client.bucket_exists(self.bucket):
                 self.client.make_bucket(self.bucket)
-                print(f"[MinIO] 创建 bucket: {self.bucket}")
+                logger.info("[MinIO] 创建 bucket: %s", self.bucket)
         except S3Error as e:
-            print(f"[MinIO] 错误: {e}")
+            logger.error("[MinIO] 错误: %s", e)
 
     def upload_file(self, local_path: str, object_name: str) -> str:
         """
@@ -47,11 +51,12 @@ class MinioClient:
                 object_name,
                 local_path,
             )
-            url = f"http://{settings.MINIO_ENDPOINT}/{self.bucket}/{object_name}"
-            print(f"[MinIO] 上传成功: {object_name}")
+            protocol = "https" if settings.MINIO_SECURE else "http"
+            url = f"{protocol}://{settings.MINIO_ENDPOINT}/{self.bucket}/{object_name}"
+            logger.info("[MinIO] 上传成功: %s", object_name)
             return url
         except S3Error as e:
-            print(f"[MinIO] 上传失败: {e}")
+            logger.error("[MinIO] 上传失败: %s", e)
             raise
 
     def upload_model(self, model_path: str, model_name: str, metadata: dict = None) -> dict:
@@ -99,7 +104,7 @@ class MinioClient:
             # 清理临时文件
             os.remove(metadata_path)
 
-        print(f"[MinIO] 模型上传完成: {base_path}")
+        logger.info("[MinIO] 模型上传完成: %s", base_path)
         return result
 
     def list_models(self, model_name: str = None) -> list:
@@ -118,13 +123,16 @@ class MinioClient:
         models = []
         for obj in objects:
             if obj.object_name.endswith("metadata.json"):
-                # 下载并解析元数据
                 try:
                     response = self.client.get_object(self.bucket, obj.object_name)
-                    metadata = json.loads(response.read().decode("utf-8"))
-                    models.append(metadata)
+                    try:
+                        metadata = json.loads(response.read().decode("utf-8"))
+                        models.append(metadata)
+                    finally:
+                        response.close()
+                        response.release_conn()
                 except Exception as e:
-                    print(f"[MinIO] 读取元数据失败: {e}")
+                    logger.warning("[MinIO] 读取元数据失败: %s", e)
 
         return models
 
@@ -141,24 +149,27 @@ class MinioClient:
         """
         try:
             self.client.fget_object(self.bucket, object_name, local_path)
-            print(f"[MinIO] 下载成功: {object_name}")
+            logger.info("[MinIO] 下载成功: %s", object_name)
             return local_path
         except S3Error as e:
-            print(f"[MinIO] 下载失败: {e}")
+            logger.error("[MinIO] 下载失败: %s", e)
             raise
 
 
-# 全局客户端实例
-minio_client = None
+# 全局客户端实例（线程安全）
+_minio_client = None
+_minio_lock = threading.Lock()
 
 
 def get_minio_client() -> MinioClient:
-    """获取 MinIO 客户端实例"""
-    global minio_client
-    if minio_client is None:
-        try:
-            minio_client = MinioClient()
-        except Exception as e:
-            print(f"[MinIO] 初始化失败: {e}")
-            raise
-    return minio_client
+    """获取 MinIO 客户端实例（线程安全的单例）"""
+    global _minio_client
+    if _minio_client is None:
+        with _minio_lock:
+            if _minio_client is None:
+                try:
+                    _minio_client = MinioClient()
+                except Exception as e:
+                    logger.error("[MinIO] 初始化失败: %s", e)
+                    raise
+    return _minio_client

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
 from app.database import get_db
 from app.models.db_models import User, DetectionHistory
 from app.models.schemas import DashboardStats

@@ -115,7 +115,7 @@ const recentRecords = ref([]);
 onMounted(async () => {
   try {
     const res = await getDashboardStats();
-    if (res.success !== false) {
+    if (res.success) {
       Object.assign(stats, res);
     }
   } catch (e) {

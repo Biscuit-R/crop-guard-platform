@@ -63,6 +63,11 @@ async def convert_dataset(
             shutil.rmtree(extract_dir)
 
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            for member in zip_ref.infolist():
+                member_path = os.path.realpath(os.path.join(extract_dir, member.filename))
+                extract_real = os.path.realpath(extract_dir)
+                if not member_path.startswith(extract_real + os.sep) and member_path != extract_real:
+                    raise HTTPException(status_code=400, detail="ZIP 文件包含不安全的路径")
             zip_ref.extractall(extract_dir)
 
         # 查找数据集目录（可能有一层嵌套）
@@ -148,6 +153,15 @@ async def download_converted_dataset(
     )
 
 
+def _save_yolo_sample(img_path: str, yolo_lines: list, out_img_dir: str, out_lbl_dir: str):
+    """保存一个 YOLO 样本（图片 + 标注文件）"""
+    img_filename = os.path.basename(img_path)
+    shutil.copy2(img_path, os.path.join(out_img_dir, img_filename))
+    txt_filename = os.path.splitext(img_filename)[0] + ".txt"
+    with open(os.path.join(out_lbl_dir, txt_filename), "w") as f:
+        f.write("\n".join(yolo_lines) + "\n")
+
+
 def _convert_voc(dataset_dir: str, output_dir: str, class_list: list) -> int:
     """转化 VOC 格式"""
     import xml.etree.ElementTree as ET
@@ -209,11 +223,7 @@ def _convert_voc(dataset_dir: str, output_dir: str, class_list: list) -> int:
                 yolo_lines.append(f"{class_map[class_name]} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
 
             if yolo_lines:
-                img_filename = os.path.basename(img_path)
-                shutil.copy2(img_path, os.path.join(out_img_dir, img_filename))
-                txt_filename = os.path.splitext(img_filename)[0] + ".txt"
-                with open(os.path.join(out_lbl_dir, txt_filename), "w") as f:
-                    f.write("\n".join(yolo_lines) + "\n")
+                _save_yolo_sample(img_path, yolo_lines, out_img_dir, out_lbl_dir)
                 converted += 1
         except Exception:
             continue
@@ -281,10 +291,7 @@ def _convert_coco(dataset_dir: str, output_dir: str) -> tuple:
                 yolo_lines.append(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
 
             if yolo_lines:
-                shutil.copy2(img_path, os.path.join(out_img_dir, img_filename))
-                txt_filename = os.path.splitext(img_filename)[0] + ".txt"
-                with open(os.path.join(out_lbl_dir, txt_filename), "w") as f:
-                    f.write("\n".join(yolo_lines) + "\n")
+                _save_yolo_sample(img_path, yolo_lines, out_img_dir, out_lbl_dir)
                 converted += 1
         except Exception:
             continue
@@ -355,10 +362,7 @@ def _convert_csv(dataset_dir: str, output_dir: str, class_list: list) -> int:
                 yolo_lines.append(f"{class_map[class_name]} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
 
             if yolo_lines:
-                shutil.copy2(img_path, os.path.join(out_img_dir, filename))
-                txt_filename = os.path.splitext(filename)[0] + ".txt"
-                with open(os.path.join(out_lbl_dir, txt_filename), "w") as f:
-                    f.write("\n".join(yolo_lines) + "\n")
+                _save_yolo_sample(img_path, yolo_lines, out_img_dir, out_lbl_dir)
                 converted += 1
         except Exception:
             continue

@@ -48,3 +48,9 @@ database/filtered_dataset/
 
 # Model weights (large binary files)
 backend/models/*.pt
+
+# Training version history
+training/versions.json
+
+# Jupyter notebooks
+.ipynb_checkpoints/

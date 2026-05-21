@@ -17,3 +17,19 @@ export const getPestList = () => {
     method: 'get'
   })
 }
+
+export const getModelStatus = () => {
+  return request({ url: '/detection/model/status', method: 'get' })
+}
+
+export const getModels = () => {
+  return request({ url: '/detection/models', method: 'get' })
+}
+
+export const switchModel = (version) => {
+  return request({
+    url: '/detection/models/switch',
+    method: 'post',
+    data: { version }
+  })
+}

@@ -31,7 +31,9 @@ async def detect_single_image(
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
 
-        result = detection_service.detect_single_image(image_path, model_name)
+        # 使用当前加载的模型版本名，而非前端传入的标签
+        actual_model = detection_service.current_model_version or model_name
+        result = detection_service.detect_single_image(image_path, actual_model)
 
         history = DetectionHistory(
             user_id=current_user.id,
@@ -61,7 +63,7 @@ async def detect_single_image(
 
 
 @router.get("/model/status", response_model=ModelStatusResponse)
-async def get_model_status():
+async def get_model_status(current_user: User = Depends(get_current_user)):
     """获取当前模型状态"""
     status = detection_service.get_status()
     return ModelStatusResponse(
@@ -72,7 +74,7 @@ async def get_model_status():
 
 
 @router.post("/model/reload", response_model=ModelStatusResponse)
-async def reload_model():
+async def reload_model(current_user: User = Depends(get_current_user)):
     """手动重载模型"""
     status = detection_service.reload()
     return ModelStatusResponse(
@@ -83,7 +85,7 @@ async def reload_model():
 
 
 @router.get("/models", response_model=ModelListResponse)
-async def list_models():
+async def list_models(current_user: User = Depends(get_current_user)):
     """列出所有可用模型版本"""
     models = detection_service.list_models()
     return ModelListResponse(
@@ -94,7 +96,7 @@ async def list_models():
 
 
 @router.post("/models/switch", response_model=ModelStatusResponse)
-async def switch_model(request: ModelSwitchRequest):
+async def switch_model(request: ModelSwitchRequest, current_user: User = Depends(get_current_user)):
     """切换到指定版本的模型"""
     try:
         status = detection_service.switch_model(request.version)
@@ -110,7 +112,7 @@ async def switch_model(request: ModelSwitchRequest):
 
 
 @router.get("/models/history", response_model=VersionHistoryResponse)
-async def get_model_history():
+async def get_model_history(current_user: User = Depends(get_current_user)):
     """获取训练版本历史"""
     history = detection_service.get_version_history()
     return VersionHistoryResponse(
@@ -123,14 +125,23 @@ async def get_model_history():
 @router.get("/pests/list", response_model=PestListResponse)
 async def get_pest_list():
     pests = [
-        PestItem(id=0, name="leaf_blight", chinese_name="叶斑病", category="真菌病害", description="叶片出现褐色或黑色斑点，严重时导致叶片枯死"),
-        PestItem(id=1, name="rust", chinese_name="锈病", category="真菌病害", description="叶片背面出现铁锈色孢子堆，影响光合作用"),
-        PestItem(id=2, name="powdery_mildew", chinese_name="白粉病", category="真菌病害", description="叶片表面覆盖白色粉状霉层"),
-        PestItem(id=3, name="aphid", chinese_name="蚜虫", category="虫害", description="吸食植物汁液，导致叶片卷曲、发黄"),
-        PestItem(id=4, name="caterpillar", chinese_name="毛虫", category="虫害", description="啃食叶片，造成缺刻或孔洞"),
-        PestItem(id=5, name="leaf_miner", chinese_name="潜叶蝇", category="虫害", description="幼虫在叶片内部取食，形成蜿蜒隧道"),
-        PestItem(id=6, name="bacterial_spot", chinese_name="细菌性斑点", category="细菌病害", description="叶片出现水渍状小斑点，后期变为褐色"),
-        PestItem(id=7, name="mosaic_virus", chinese_name="花叶病毒", category="病毒病害", description="叶片出现黄绿相间的花叶症状，植株矮化"),
+        # 真菌病害
+        PestItem(id=1, name="leaf_blight", chinese_name="叶斑病", category="真菌病害", description="叶片出现褐色或黑色斑点，严重时导致叶片枯死"),
+        PestItem(id=2, name="rust", chinese_name="锈病", category="真菌病害", description="叶片背面出现铁锈色孢子堆，影响光合作用"),
+        PestItem(id=3, name="powdery_mildew", chinese_name="白粉病", category="真菌病害", description="叶片表面覆盖白色粉状霉层"),
+        PestItem(id=4, name="anthracnose", chinese_name="炭疽病", category="真菌病害", description="叶片和果实出现凹陷的黑色病斑"),
+        # 细菌病害
+        PestItem(id=5, name="bacterial_spot", chinese_name="细菌性斑点", category="细菌病害", description="叶片出现水渍状小斑点，后期变为褐色"),
+        PestItem(id=6, name="soft_rot", chinese_name="软腐病", category="细菌病害", description="组织软化腐烂，有恶臭气味"),
+        PestItem(id=7, name="bacterial_wilt", chinese_name="青枯病", category="细菌病害", description="植株迅速萎蔫，维管束变褐"),
+        # 病毒病害
+        PestItem(id=8, name="mosaic_virus", chinese_name="花叶病毒", category="病毒病害", description="叶片出现黄绿相间的花叶症状，植株矮化"),
+        PestItem(id=9, name="yellowing_virus", chinese_name="黄化病毒", category="病毒病害", description="叶片黄化，植株生长受阻"),
+        # 虫害
+        PestItem(id=10, name="aphid", chinese_name="蚜虫", category="虫害", description="吸食植物汁液，导致叶片卷曲、发黄"),
+        PestItem(id=11, name="caterpillar", chinese_name="毛虫", category="虫害", description="啃食叶片，造成缺刻或孔洞"),
+        PestItem(id=12, name="leaf_miner", chinese_name="潜叶蝇", category="虫害", description="幼虫在叶片内部取食，形成蜿蜒隧道"),
+        PestItem(id=13, name="red_spider", chinese_name="红蜘蛛", category="虫害", description="吸食叶片汁液，出现密集白色小点"),
     ]
     return PestListResponse(
         success=True,

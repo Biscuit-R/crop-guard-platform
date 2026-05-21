@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import router from '../router'
 
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -26,7 +27,7 @@ service.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      router.push('/login')
       return Promise.reject(error)
     }
     ElMessage.error('请求失败：' + (error.response?.data?.message || error.response?.data?.detail || '服务器错误'))

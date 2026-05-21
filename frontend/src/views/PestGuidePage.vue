@@ -61,49 +61,54 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   Search, Aim, Grid, CircleCheck, Help,
   Sunny, Warning, FirstAidKit, Opportunity,
 } from "@element-plus/icons-vue";
+import { getPestList } from "../api/detection";
 
 const searchQuery = ref("");
+const loading = ref(false);
+const categories = ref([]);
 
-const categories = ref([
-  {
-    id: 1, name: "真菌病害", icon: Warning, color: "#f59e0b",
-    pests: [
-      { id: 1, name: "叶斑病", description: "叶片出现褐色或黑色斑点，严重时导致叶片枯死" },
-      { id: 2, name: "锈病", description: "叶片背面出现铁锈色孢子堆，影响光合作用" },
-      { id: 3, name: "白粉病", description: "叶片表面覆盖白色粉状霉层" },
-      { id: 4, name: "炭疽病", description: "叶片和果实出现凹陷的黑色病斑" },
-    ],
-  },
-  {
-    id: 2, name: "细菌病害", icon: FirstAidKit, color: "#ef4444",
-    pests: [
-      { id: 5, name: "细菌性斑点", description: "叶片出现水渍状小斑点，后期变为褐色" },
-      { id: 6, name: "软腐病", description: "组织软化腐烂，有恶臭气味" },
-      { id: 7, name: "青枯病", description: "植株迅速萎蔫，维管束变褐" },
-    ],
-  },
-  {
-    id: 3, name: "病毒病害", icon: Opportunity, color: "#8b5cf6",
-    pests: [
-      { id: 8, name: "花叶病毒", description: "叶片出现黄绿相间的花叶症状，植株矮化" },
-      { id: 9, name: "黄化病毒", description: "叶片黄化，植株生长受阻" },
-    ],
-  },
-  {
-    id: 4, name: "虫害", icon: Sunny, color: "#0d9488",
-    pests: [
-      { id: 10, name: "蚜虫", description: "吸食植物汁液，导致叶片卷曲、发黄" },
-      { id: 11, name: "毛虫", description: "啃食叶片，造成缺刻或孔洞" },
-      { id: 12, name: "潜叶蝇", description: "幼虫在叶片内部取食，形成蜿蜒隧道" },
-      { id: 13, name: "红蜘蛛", description: "吸食叶片汁液，出现密集白色小点" },
-    ],
-  },
-]);
+const categoryConfig = {
+  "真菌病害": { icon: Warning, color: "#f59e0b" },
+  "细菌病害": { icon: FirstAidKit, color: "#ef4444" },
+  "病毒病害": { icon: Opportunity, color: "#8b5cf6" },
+  "虫害": { icon: Sunny, color: "#0d9488" },
+};
+
+const fetchPests = async () => {
+  loading.value = true;
+  try {
+    const res = await getPestList();
+    if (res.success) {
+      const grouped = {};
+      for (const pest of res.data) {
+        if (!grouped[pest.category]) {
+          grouped[pest.category] = [];
+        }
+        grouped[pest.category].push({
+          id: pest.id,
+          name: pest.chinese_name,
+          description: pest.description,
+        });
+      }
+      categories.value = Object.entries(grouped).map(([name, pests], index) => ({
+        id: index + 1,
+        name,
+        pests,
+        icon: categoryConfig[name]?.icon || Warning,
+        color: categoryConfig[name]?.color || "#6b7280",
+      }));
+    }
+  } catch (e) {
+    console.error("获取病虫害列表失败:", e);
+  } finally {
+    loading.value = false;
+  }
+};
 
 const filteredCategories = computed(() => {
   if (!searchQuery.value) return categories.value;
@@ -117,6 +122,8 @@ const filteredCategories = computed(() => {
 });
 
 const totalPests = computed(() => categories.value.reduce((sum, c) => sum + c.pests.length, 0));
+
+onMounted(fetchPests);
 </script>
 
 <style scoped lang="scss">

@@ -8,13 +8,9 @@
 
     <div class="header-actions">
       <div class="action-icons">
-        <el-icon class="action-icon"><Bell /></el-icon>
         <div class="user-dropdown">
           <el-avatar class="user-avatar" size="32">
-            <img
-              src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
-              alt="用户头像"
-            />
+            {{ (userStore.userInfo?.username || 'U')[0].toUpperCase() }}
           </el-avatar>
           <div class="user-info">
             <div class="user-name">{{ userStore.userInfo?.username || '用户' }}</div>
@@ -31,7 +27,6 @@
 import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import {
-  Bell,
   CaretBottom,
   House,
 } from "@element-plus/icons-vue";
@@ -39,7 +34,7 @@ import { useUserStore } from "../stores/user";
 
 const route = useRoute();
 const userStore = useUserStore();
-const currentRouteName = computed(() => route.name || "数据看板");
+const currentRouteName = computed(() => route.meta?.title || "数据看板");
 
 onMounted(async () => {
   if (userStore.isLoggedIn && !userStore.userInfo) {

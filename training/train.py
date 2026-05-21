@@ -198,13 +198,12 @@ def main():
     if args.resume:
         print(f"恢复训练: {args.resume}")
         model = YOLO(args.resume)
-        model.resume = True
     else:
         print(f"加载预训练模型: {args.model}")
         model = YOLO(args.model)
 
     # 开始训练
-    results = model.train(
+    train_kwargs = dict(
         data=args.data,
         epochs=args.epochs,
         imgsz=args.imgsz,
@@ -221,6 +220,9 @@ def main():
         seed=42,
         deterministic=True,
     )
+    if args.resume:
+        train_kwargs["resume"] = True
+    results = model.train(**train_kwargs)
 
     # 获取最佳权重路径
     best_path = os.path.join(args.project, model_name, "weights", "best.pt")
@@ -247,10 +249,16 @@ def main():
     except Exception:
         pass
 
-    # 验证
+    # 验证（加载 best.pt 权重）
     print("正在验证最佳模型...")
     try:
-        val_metrics = model.val()
+        best_model = YOLO(best_path)
+        val_metrics = best_model.val(
+            data=args.data,
+            imgsz=args.imgsz,
+            batch=args.batch,
+            device=args.device,
+        )
         print(f"  mAP50:    {val_metrics.box.map50:.4f}")
         print(f"  mAP50-95: {val_metrics.box.map:.4f}")
         metrics["val_mAP50"] = val_metrics.box.map50

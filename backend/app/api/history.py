@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.db_models import User, DetectionHistory
-from app.models.schemas import HistoryListResponse, HistoryDetailItem
+from app.models.schemas import HistoryListResponse, HistoryDetailItem, TokenResponse
 from app.utils.auth_utils import get_current_user
 
 router = APIRouter(prefix="/history", tags=["检测历史"])
@@ -48,7 +48,7 @@ async def get_history_detail(
     return HistoryDetailItem.model_validate(record)
 
 
-@router.delete("/{history_id}")
+@router.delete("/{history_id}", response_model=TokenResponse)
 async def delete_history(
     history_id: int,
     current_user: User = Depends(get_current_user),
@@ -64,4 +64,4 @@ async def delete_history(
 
     db.delete(record)
     db.commit()
-    return {"success": True, "message": "删除成功"}
+    return TokenResponse(success=True, message="删除成功")

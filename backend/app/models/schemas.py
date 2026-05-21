@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -49,9 +49,9 @@ class PestListResponse(BaseModel):
 # ==================== 认证相关 Schema ====================
 
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_]+$")
+    email: str = Field(..., max_length=100)
+    password: str = Field(..., min_length=6, max_length=128)
 
 
 class UserLogin(BaseModel):
@@ -85,7 +85,7 @@ class HistoryDetailItem(BaseModel):
     model_name: Optional[str] = None
     total_objects: int = 0
     detection_time: Optional[float] = None
-    boxes: Optional[list] = None
+    boxes: Optional[List[DetectionBox]] = None
     status: str = "completed"
     created_at: datetime
 

@@ -1,11 +1,13 @@
-from pydantic import BaseModel
-import os
+import logging
+from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
 
 
-class Settings(BaseModel):
+class Settings(BaseSettings):
     APP_NAME: str = "Crop Guard Platform"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     HOST: str = "0.0.0.0"
     PORT: int = 8081
@@ -39,24 +41,29 @@ class Settings(BaseModel):
     MINIO_BUCKET: str = "crop-guard-bucket"
     MINIO_SECURE: bool = False
 
-
-def get_settings() -> Settings:
-    settings = Settings()
-
-    env_file = ".env"
-    if os.path.exists(env_file):
-        with open(env_file, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    key, value = line.split("=", 1)
-                    if hasattr(settings, key):
-                        try:
-                            setattr(settings, key, type(getattr(settings, key))(value))
-                        except ValueError:
-                            pass
-
-    return settings
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+    }
 
 
-settings = get_settings()
+# 安全凭据默认值列表（用于启动时检测）
+_INSECURE_DEFAULTS = {
+    "JWT_SECRET_KEY": "crop-guard-secret-key-change-in-production",
+    "DB_PASSWORD": "crop_password",
+    "MINIO_ACCESS_KEY": "minioadmin",
+    "MINIO_SECRET_KEY": "minioadmin",
+}
+
+
+def _check_insecure_defaults(settings: Settings):
+    """检测不安全的默认凭据并发出警告"""
+    for field, default_val in _INSECURE_DEFAULTS.items():
+        if getattr(settings, field) == default_val:
+            logger.warning(
+                "[安全警告] %s 使用了默认值，生产环境请通过 .env 文件覆盖", field
+            )
+
+
+settings = Settings()
+_check_insecure_defaults(settings)

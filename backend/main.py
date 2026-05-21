@@ -1,3 +1,6 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,14 +15,35 @@ from app.utils.file_utils import ensure_directories
 
 import app.models.db_models  # noqa: F401
 
-Base.metadata.create_all(bind=engine)
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
-ensure_directories()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    ensure_directories()
+    Base.metadata.create_all(bind=engine)
+
+    from app.services.detection_service import detection_service
+    status = detection_service.get_status()
+    logger.info("[启动] 模型路径: %s", status['model_path'])
+    logger.info("[启动] 模型版本: %s", status['model_version'])
+    logger.info("[启动] 类别数量: %d", status['class_count'])
+    logger.info("[启动] 加载状态: %s", '成功' if status['is_loaded'] else '失败')
+
+    yield
+    # Shutdown (if needed)
+
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="农作物病虫害检测平台后端API"
+    description="农作物病虫害检测平台后端API",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -37,16 +61,6 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(history_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(dataset_router, prefix="/api")
-
-
-@app.on_event("startup")
-async def startup_event():
-    from app.services.detection_service import detection_service
-    status = detection_service.get_status()
-    print(f"[启动] 模型路径: {status['model_path']}")
-    print(f"[启动] 模型版本: {status['model_version']}")
-    print(f"[启动] 类别数量: {status['class_count']}")
-    print(f"[启动] 加载状态: {'成功' if status['is_loaded'] else '失败'}")
 
 
 @app.get("/")

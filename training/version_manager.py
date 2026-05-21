@@ -24,8 +24,11 @@ class VersionManager:
     def _load_versions(self) -> dict:
         """加载版本记录"""
         if os.path.exists(self.versions_file):
-            with open(self.versions_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+            try:
+                with open(self.versions_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                print(f"[版本管理] 警告: {self.versions_file} 格式损坏，将重新创建")
         return {
             "current_version": "v0.0.0",
             "versions": [],
@@ -55,7 +58,7 @@ class VersionManager:
         """
         current = self.get_current_version()
         # 移除 'v' 前缀
-        version = current.lstrip("v")
+        version = current.removeprefix("v")
         major, minor, patch = map(int, version.split("."))
 
         if bump_type == "major":

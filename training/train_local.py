@@ -17,28 +17,38 @@ import json
 import argparse
 from datetime import datetime
 
+import platform
+
 # 项目根目录（training 的父目录）
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TRAINING_DIR = os.path.dirname(os.path.abspath(__file__))
-VENV_PYTHON = os.path.join(PROJECT_DIR, "backend", ".venv", "Scripts", "python.exe")
+
+# 根据平台选择 Python 路径
+if platform.system() == "Windows":
+    VENV_PYTHON = os.path.join(PROJECT_DIR, "backend", ".venv", "Scripts", "python.exe")
+else:
+    VENV_PYTHON = os.path.join(PROJECT_DIR, "backend", ".venv", "bin", "python")
+
 DATA_YAML = os.path.join(TRAINING_DIR, "data.yaml")
 DATASET_DIR = os.path.join(PROJECT_DIR, "database")
 
-# 训练参数
-CONFIG = {
-    "data": DATA_YAML,
-    "model": os.path.join(PROJECT_DIR, "backend", "models", "yolo11n.pt"),
-    "epochs": 100,
-    "batch": 16,
-    "imgsz": 640,
-    "device": "0",       # "0" = GPU, "cpu" = CPU
-    "workers": 2,
-    "patience": 20,
-    "project": os.path.join(TRAINING_DIR, "runs"),
-    "name": "crop_guard",
-    "lr0": 0.01,
-    "save_period": 10,
-}
+
+def get_default_config():
+    """返回默认训练参数（避免模块级可变全局状态）"""
+    return {
+        "data": DATA_YAML,
+        "model": os.path.join(PROJECT_DIR, "backend", "models", "yolo11n.pt"),
+        "epochs": 100,
+        "batch": 16,
+        "imgsz": 640,
+        "device": "0",       # "0" = GPU, "cpu" = CPU
+        "workers": 2,
+        "patience": 20,
+        "project": os.path.join(TRAINING_DIR, "runs"),
+        "name": "crop_guard",
+        "lr0": 0.01,
+        "save_period": 10,
+    }
 
 
 def parse_args():
@@ -107,13 +117,14 @@ def check_env():
     print()
 
 
-def upload_to_minio(model_path: str, version_info: dict, metrics: dict = None):
+def upload_to_minio(model_path: str, version_info: dict, config: dict, metrics: dict = None):
     """
     上传模型到 MinIO
 
     Args:
         model_path: 模型文件路径
         version_info: 版本信息
+        config: 训练配置
         metrics: 训练指标
     """
     try:
@@ -133,18 +144,18 @@ def upload_to_minio(model_path: str, version_info: dict, metrics: dict = None):
         metadata = {
             "version": version_info["version"],
             "timestamp": version_info["timestamp"],
-            "model_name": version_info.get("model_name", CONFIG["name"]),
+            "model_name": version_info.get("model_name", config["name"]),
             "description": version_info.get("description", ""),
             "training_config": {
-                "epochs": CONFIG["epochs"],
-                "batch": CONFIG["batch"],
-                "imgsz": CONFIG["imgsz"],
-                "device": CONFIG["device"],
-                "lr0": CONFIG["lr0"],
-                "patience": CONFIG["patience"],
+                "epochs": config["epochs"],
+                "batch": config["batch"],
+                "imgsz": config["imgsz"],
+                "device": config["device"],
+                "lr0": config["lr0"],
+                "patience": config["patience"],
             },
             "dataset": {
-                "data_yaml": CONFIG["data"],
+                "data_yaml": config["data"],
                 "train_count": len(os.listdir(os.path.join(DATASET_DIR, "images", "train"))),
                 "val_count": len(os.listdir(os.path.join(DATASET_DIR, "images", "val"))),
             },
@@ -155,7 +166,7 @@ def upload_to_minio(model_path: str, version_info: dict, metrics: dict = None):
         # 上传模型
         result = minio.upload_model(
             model_path=model_path,
-            model_name=version_info.get("model_name", CONFIG["name"]),
+            model_name=version_info.get("model_name", config["name"]),
             metadata=metadata,
         )
 
@@ -198,13 +209,16 @@ def deploy_model(best_path: str, version: str):
 def main():
     args = parse_args()
 
+    # 创建配置副本，避免修改模块级状态
+    config = get_default_config()
+
     # 应用命令行参数覆盖
     if args.epochs:
-        CONFIG["epochs"] = args.epochs
+        config["epochs"] = args.epochs
     if args.batch:
-        CONFIG["batch"] = args.batch
+        config["batch"] = args.batch
     if args.device:
-        CONFIG["device"] = args.device
+        config["device"] = args.device
 
     check_env()
 
@@ -227,39 +241,39 @@ def main():
 
     print("训练参数:")
     print(f"  版本:   {version_info['version']}")
-    print(f"  模型:   {CONFIG['model']}")
-    print(f"  轮数:   {CONFIG['epochs']}")
-    print(f"  批次:   {CONFIG['batch']}")
-    print(f"  设备:   {CONFIG['device']}")
-    print(f"  早停:   {CONFIG['patience']} 轮")
+    print(f"  模型:   {config['model']}")
+    print(f"  轮数:   {config['epochs']}")
+    print(f"  批次:   {config['batch']}")
+    print(f"  设备:   {config['device']}")
+    print(f"  早停:   {config['patience']} 轮")
     print()
-    print(f"结果保存: {CONFIG['project']}/{model_name}")
+    print(f"结果保存: {config['project']}/{model_name}")
     print()
     print("开始训练...")
     print()
 
     from ultralytics import YOLO
 
-    model = YOLO(CONFIG["model"])
+    model = YOLO(config["model"])
     results = model.train(
-        data=CONFIG["data"],
-        epochs=CONFIG["epochs"],
-        imgsz=CONFIG["imgsz"],
-        batch=CONFIG["batch"],
-        device=CONFIG["device"],
-        workers=CONFIG["workers"],
-        patience=CONFIG["patience"],
-        project=CONFIG["project"],
+        data=config["data"],
+        epochs=config["epochs"],
+        imgsz=config["imgsz"],
+        batch=config["batch"],
+        device=config["device"],
+        workers=config["workers"],
+        patience=config["patience"],
+        project=config["project"],
         name=model_name,
-        lr0=CONFIG["lr0"],
-        save_period=CONFIG["save_period"],
+        lr0=config["lr0"],
+        save_period=config["save_period"],
         save=True,
         verbose=True,
         seed=42,
     )
 
     # 获取最佳权重路径
-    best_path = os.path.join(CONFIG["project"], model_name, "weights", "best.pt")
+    best_path = os.path.join(config["project"], model_name, "weights", "best.pt")
 
     print()
     print("=" * 60)
@@ -291,7 +305,7 @@ def main():
 
         # 自动上传到 MinIO
         if not args.no_upload:
-            upload_to_minio(best_path, version_info, metrics)
+            upload_to_minio(best_path, version_info, config, metrics)
     else:
         print(f"  错误: 未找到最佳权重 {best_path}")
 

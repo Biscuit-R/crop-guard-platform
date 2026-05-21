@@ -99,7 +99,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Search, Clock, Picture, Aim, Help, Plus,
 } from "@element-plus/icons-vue";
@@ -147,14 +147,19 @@ const getStatusText = (status) => {
 };
 
 const deleteRecord = async (record) => {
-  if (confirm(`确定要删除记录 "${record.filename}" 吗？`)) {
-    try {
-      const res = await deleteHistory(record.id);
-      if (res.success) {
-        ElMessage.success("删除成功");
-        fetchHistory();
-      }
-    } catch (error) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除记录 "${record.filename}" 吗？`,
+      "确认删除",
+      { confirmButtonText: "删除", cancelButtonText: "取消", type: "warning" }
+    );
+    const res = await deleteHistory(record.id);
+    if (res.success) {
+      ElMessage.success("删除成功");
+      fetchHistory();
+    }
+  } catch (error) {
+    if (error !== "cancel") {
       console.error("删除失败:", error);
     }
   }
