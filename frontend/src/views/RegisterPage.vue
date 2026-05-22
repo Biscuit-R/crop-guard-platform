@@ -94,11 +94,12 @@
 <script setup>
 import { ref, reactive } from "vue";
 import { UserFilled, User, Message, Lock } from "@element-plus/icons-vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "../stores/user";
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const registerForm = reactive({
@@ -166,7 +167,8 @@ const handleRegister = () => {
         });
         if (res.success) {
           ElMessage.success("注册成功");
-          router.push("/dashboard");
+          const redirect = route.query.redirect;
+          router.push(redirect || "/dashboard");
         }
       } catch (error) {
         // 错误已在 axios 拦截器中处理

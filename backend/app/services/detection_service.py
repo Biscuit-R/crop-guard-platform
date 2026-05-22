@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from ultralytics import YOLO
 import cv2
 from app.config import settings
-from app.models.schemas import DetectionBox, DetectionResult, ModelInfo, VersionHistoryItem
+from app.models.schemas import DetectionBox, DetectionResult, VideoDetectionResult, ModelInfo, VersionHistoryItem
 from app.utils.file_utils import get_file_url
 
 logger = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ class DetectionService:
             logger.warning("[版本历史] 读取失败: %s", e)
             return []
 
-    def detect_single_image(self, image_path: str, model_name: str = "pest-v1") -> DetectionResult:
+    def detect_single_image(self, image_path: str, model_name: str = "pest-v1", conf: float = None) -> DetectionResult:
         # 检测前自动检查模型更新
         self.check_and_reload()
 
@@ -199,7 +199,7 @@ class DetectionService:
 
             results = self.model.predict(
                 source=image_path,
-                conf=settings.CONFIDENCE_THRESHOLD,
+                conf=conf if conf is not None else settings.CONFIDENCE_THRESHOLD,
                 iou=settings.IOU_THRESHOLD,
                 save=False
             )
@@ -223,7 +223,7 @@ class DetectionService:
             result_path = os.path.join(settings.RESULT_DIR, result_filename)
 
             annotated_image = results[0].plot()
-            cv2.imwrite(result_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(result_path, annotated_image)
 
             detection_time = time.time() - start_time
             image_filename = os.path.basename(image_path)
@@ -237,6 +237,98 @@ class DetectionService:
                 detection_time=round(detection_time, 3),
                 model_name=model_name,
                 created_at=datetime.now(timezone.utc)
+            )
+
+    def detect_video(self, video_path: str, model_name: str = "pest-v1",
+                     conf: float = None, frame_interval: int = 5) -> VideoDetectionResult:
+        self.check_and_reload()
+
+        with self._lock:
+            start_time = time.time()
+            detection_id = str(uuid.uuid4())
+            conf_threshold = conf if conf is not None else settings.CONFIDENCE_THRESHOLD
+
+            cap = cv2.VideoCapture(video_path)
+            if not cap.isOpened():
+                raise ValueError("无法打开视频文件")
+
+            fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            duration = total_frames / fps if fps > 0 else 0
+
+            # 准备输出视频
+            result_filename = f"result_{uuid.uuid4().hex}.mp4"
+            result_path = os.path.join(settings.RESULT_VIDEO_DIR, result_filename)
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            writer = cv2.VideoWriter(result_path, fourcc, fps, (width, height))
+
+            total_objects = 0
+            class_summary = {}
+            key_frames = []
+            processed_frames = 0
+            frame_idx = 0
+
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
+                if frame_idx % frame_interval == 0:
+                    # 检测当前帧
+                    results = self.model.predict(
+                        source=frame,
+                        conf=conf_threshold,
+                        iou=settings.IOU_THRESHOLD,
+                        save=False,
+                        verbose=False,
+                    )
+
+                    annotated = results[0].plot()
+                    writer.write(annotated)
+
+                    # 统计检测结果
+                    for box in results[0].boxes:
+                        class_id = int(box.cls[0])
+                        class_name = self.class_names.get(class_id, f"class_{class_id}")
+                        class_summary[class_name] = class_summary.get(class_name, 0) + 1
+                        total_objects += 1
+
+                    # 保存关键帧（有检测目标的帧）
+                    if len(results[0].boxes) > 0 and len(key_frames) < 10:
+                        kf_filename = f"kf_{uuid.uuid4().hex}.jpg"
+                        kf_path = os.path.join(settings.RESULT_VIDEO_DIR, kf_filename)
+                        cv2.imwrite(kf_path, annotated)
+                        key_frames.append(get_file_url(kf_filename, settings.RESULT_VIDEO_DIR))
+
+                    processed_frames += 1
+                else:
+                    # 非检测帧直接写入原帧
+                    writer.write(frame)
+
+                frame_idx += 1
+
+            cap.release()
+            writer.release()
+
+            detection_time = time.time() - start_time
+            video_filename = os.path.basename(video_path)
+
+            return VideoDetectionResult(
+                detection_id=detection_id,
+                video_url=get_file_url(video_filename, settings.VIDEO_DIR),
+                result_video_url=get_file_url(result_filename, settings.RESULT_VIDEO_DIR),
+                total_objects=total_objects,
+                total_frames=total_frames,
+                processed_frames=processed_frames,
+                fps=round(fps, 2),
+                duration=round(duration, 2),
+                detection_time=round(detection_time, 3),
+                model_name=model_name,
+                created_at=datetime.now(timezone.utc),
+                summary=class_summary,
+                key_frames=key_frames,
             )
 
 

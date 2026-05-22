@@ -115,8 +115,11 @@ const recentRecords = ref([]);
 onMounted(async () => {
   try {
     const res = await getDashboardStats();
-    if (res.success) {
-      Object.assign(stats, res);
+    if (res) {
+      stats.total_detections = res.total_detections ?? 0;
+      stats.total_objects = res.total_objects ?? 0;
+      stats.success_rate = res.success_rate ?? 0;
+      stats.active_days = res.active_days ?? 0;
     }
   } catch (e) {
     console.error("获取统计数据失败:", e);

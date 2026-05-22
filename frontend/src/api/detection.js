@@ -11,6 +11,29 @@ export const detectSingleImage = (data) => {
   })
 }
 
+export const detectBatchImages = (data) => {
+  return request({
+    url: '/detection/batch',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const detectVideo = (data) => {
+  return request({
+    url: '/detection/video',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    timeout: 600000
+  })
+}
+
 export const getPestList = () => {
   return request({
     url: '/detection/pests/list',

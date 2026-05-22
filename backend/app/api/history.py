@@ -12,10 +12,16 @@ router = APIRouter(prefix="/history", tags=["检测历史"])
 async def get_history_list(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
+    keyword: str = Query(None),
+    status: str = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     query = db.query(DetectionHistory).filter(DetectionHistory.user_id == current_user.id)
+    if keyword:
+        query = query.filter(DetectionHistory.filename.ilike(f"%{keyword}%"))
+    if status:
+        query = query.filter(DetectionHistory.status == status)
     total = query.count()
     records = (
         query.order_by(DetectionHistory.created_at.desc())

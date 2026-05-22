@@ -9,17 +9,6 @@
       <el-tag v-else type="info" effect="light" class="result-tag">等待上传</el-tag>
     </div>
 
-    <div class="toolbar">
-      <el-button :class="{ active: compareMode === 'side' }" size="small" @click="$emit('update:compareMode', 'side')">
-        <el-icon><Minus /></el-icon>
-        并排对比
-      </el-button>
-      <el-button :class="{ active: compareMode === 'grid' }" size="small" @click="$emit('update:compareMode', 'grid')">
-        <el-icon><Grid /></el-icon>
-        栅格对比
-      </el-button>
-    </div>
-
     <div class="image-compare">
       <div class="image-card">
         <img v-if="originalImage" :src="originalImage" alt="原始图片" class="compare-image" />
@@ -43,16 +32,13 @@
 </template>
 
 <script setup>
-import { Picture, Check, Grid, Minus } from "@element-plus/icons-vue";
+import { Picture, Check } from "@element-plus/icons-vue";
 
 defineProps({
   originalImage: { type: String, default: "" },
   resultImage: { type: String, default: "" },
   hasResult: { type: Boolean, default: false },
-  compareMode: { type: String, default: "side" },
 });
-
-defineEmits(["update:compareMode"]);
 </script>
 
 <style scoped>
@@ -64,12 +50,6 @@ defineEmits(["update:compareMode"]);
 }
 .panel-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
 .result-tag { padding: 4px 12px; border-radius: 20px; font-size: 13px; }
-
-.toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
-.toolbar .el-button { border-radius: 6px; padding: 6px 14px; }
-.toolbar .el-button.active {
-  background-color: var(--primary-light); color: var(--primary-color); border-color: var(--primary-color);
-}
 
 .image-compare { display: flex; gap: 16px; height: 320px; }
 .image-card {

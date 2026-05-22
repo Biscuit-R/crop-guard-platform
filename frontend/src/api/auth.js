@@ -22,3 +22,18 @@ export function getUserInfo() {
     method: 'get'
   })
 }
+
+export function logout() {
+  return request({
+    url: '/auth/logout',
+    method: 'post'
+  })
+}
+
+export function changePassword(data) {
+  return request({
+    url: '/auth/password',
+    method: 'put',
+    data
+  })
+}

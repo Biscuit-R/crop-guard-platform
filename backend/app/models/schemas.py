@@ -32,6 +32,41 @@ class SingleDetectionResponse(BaseModel):
     data: Optional[DetectionResult] = None
 
 
+class BatchDetectionItem(BaseModel):
+    filename: str
+    success: bool
+    data: Optional[DetectionResult] = None
+    error: Optional[str] = None
+
+
+class BatchDetectionResponse(BaseModel):
+    success: bool
+    message: str
+    data: Optional[dict] = None
+
+
+class VideoDetectionResult(BaseModel):
+    detection_id: str
+    video_url: str
+    result_video_url: str
+    total_objects: int
+    total_frames: int
+    processed_frames: int
+    fps: float
+    duration: float
+    detection_time: float
+    model_name: str
+    created_at: datetime
+    summary: dict  # {"class_name": count, ...}
+    key_frames: List[str]  # 关键帧截图 URL
+
+
+class VideoDetectionResponse(BaseModel):
+    success: bool
+    message: str
+    data: Optional[VideoDetectionResult] = None
+
+
 class PestItem(BaseModel):
     id: int
     name: str
@@ -63,10 +98,22 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    role: str = "user"
+    is_active: bool = True
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class AdminUserUpdate(BaseModel):
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=6, max_length=128)
+    new_password: str = Field(..., min_length=6, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -80,8 +127,14 @@ class TokenResponse(BaseModel):
 class HistoryDetailItem(BaseModel):
     id: int
     filename: str
+    media_type: str = "image"
     original_image: Optional[str] = None
     result_image: Optional[str] = None
+    video_url: Optional[str] = None
+    result_video_url: Optional[str] = None
+    frame_count: Optional[int] = None
+    fps: Optional[float] = None
+    duration: Optional[float] = None
     model_name: Optional[str] = None
     total_objects: int = 0
     detection_time: Optional[float] = None

@@ -34,6 +34,7 @@
                 v-model="loginForm.username"
                 placeholder="请输入用户名"
                 size="large"
+                @keyup.enter="handleLogin"
               >
                 <template #prefix>
                   <el-icon><User /></el-icon>
@@ -50,6 +51,7 @@
                 type="password"
                 placeholder="请输入密码"
                 size="large"
+                @keyup.enter="handleLogin"
               >
                 <template #prefix>
                   <el-icon><Lock /></el-icon>
@@ -83,11 +85,12 @@
 <script setup>
 import { ref, reactive } from "vue";
 import { User, Lock } from "@element-plus/icons-vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "../stores/user";
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const loginForm = reactive({
@@ -118,10 +121,12 @@ const handleLogin = () => {
         const res = await userStore.login({
           username: loginForm.username,
           password: loginForm.password,
+          remember: loginForm.remember,
         });
         if (res.success) {
           ElMessage.success("登录成功");
-          router.push("/dashboard");
+          const redirect = route.query.redirect;
+          router.push(redirect || "/dashboard");
         }
       } catch (error) {
         // 错误已在 axios 拦截器中处理

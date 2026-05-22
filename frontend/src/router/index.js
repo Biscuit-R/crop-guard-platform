@@ -62,6 +62,13 @@ const routes = [
     meta: { title: "个人中心" },
     component: () => import("../views/ProfilePage.vue"),
   },
+  // 管理员路由
+  {
+    path: "/admin",
+    name: "AdminUsers",
+    meta: { title: "用户管理", requiresAdmin: true },
+    component: () => import("../views/AdminUsersPage.vue"),
+  },
 ];
 
 const router = createRouter({
@@ -70,7 +77,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const authPaths = ["/login", "/register"];
 
   if (authPaths.includes(to.path)) {
@@ -78,6 +85,24 @@ router.beforeEach((to, from, next) => {
   } else if (!token) {
     next("/login");
   } else {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+        next("/login");
+        return;
+      }
+      if (to.meta.requiresAdmin && payload.role !== "admin") {
+        next("/dashboard");
+        return;
+      }
+    } catch {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      next("/login");
+      return;
+    }
     next();
   }
 });

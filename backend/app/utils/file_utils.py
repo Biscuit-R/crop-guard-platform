@@ -16,19 +16,21 @@ def ensure_directories():
     Paths.init_all_dirs()
 
 
-async def save_upload_file(file: UploadFile, directory: str) -> str:
+async def save_upload_file(file: UploadFile, directory: str, max_size: int = None) -> str:
     ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
     filename = f"temp_{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(directory, filename)
 
+    limit = max_size or MAX_UPLOAD_SIZE
     size = 0
     async with aiofiles.open(file_path, "wb") as f:
         while chunk := await file.read(8192):
             size += len(chunk)
-            if size > MAX_UPLOAD_SIZE:
+            if size > limit:
                 await f.close()
                 os.remove(file_path)
-                raise HTTPException(status_code=413, detail="文件大小超过限制 (最大 50MB)")
+                limit_mb = limit // (1024 * 1024)
+                raise HTTPException(status_code=413, detail=f"文件大小超过限制 (最大 {limit_mb}MB)")
             await f.write(chunk)
 
     return filename

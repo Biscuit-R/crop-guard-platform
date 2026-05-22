@@ -1,4 +1,5 @@
 import os
+from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.services.detection_service import detection_service
@@ -8,7 +9,7 @@ from app.database import get_db
 from app.models.db_models import User, DetectionHistory
 from app.config import settings
 from app.models.schemas import (
-    SingleDetectionResponse, PestListResponse, PestItem,
+    SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, PestListResponse, PestItem,
     ModelStatusResponse, ModelStatus,
     ModelListResponse, ModelInfo,
     ModelSwitchRequest,
@@ -24,6 +25,7 @@ ensure_directories()
 async def detect_single_image(
     file: UploadFile = File(...),
     model_name: str = Form("pest-v1"),
+    conf: float = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -31,9 +33,8 @@ async def detect_single_image(
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
 
-        # 使用当前加载的模型版本名，而非前端传入的标签
         actual_model = detection_service.current_model_version or model_name
-        result = detection_service.detect_single_image(image_path, actual_model)
+        result = detection_service.detect_single_image(image_path, actual_model, conf=conf)
 
         history = DetectionHistory(
             user_id=current_user.id,
@@ -60,6 +61,99 @@ async def detect_single_image(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
+
+
+@router.post("/batch", response_model=BatchDetectionResponse)
+async def detect_batch_images(
+    files: List[UploadFile] = File(...),
+    model_name: str = Form("pest-v1"),
+    conf: float = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    actual_model = detection_service.current_model_version or model_name
+    results = []
+    for file in files:
+        try:
+            filename = await save_upload_file(file, settings.UPLOAD_DIR)
+            image_path = os.path.join(settings.UPLOAD_DIR, filename)
+            result = detection_service.detect_single_image(image_path, actual_model, conf=conf)
+
+            history = DetectionHistory(
+                user_id=current_user.id,
+                filename=filename,
+                original_image=result.image_url,
+                result_image=result.result_image_url,
+                model_name=result.model_name,
+                total_objects=result.total_objects,
+                detection_time=result.detection_time,
+                boxes=[box.model_dump() for box in result.boxes],
+                status="completed",
+            )
+            db.add(history)
+            db.commit()
+            db.refresh(history)
+
+            result_dict = result.model_dump()
+            result_dict["detection_id"] = str(history.id)
+            results.append({"filename": file.filename, "success": True, "data": result_dict})
+        except Exception as e:
+            results.append({"filename": file.filename, "success": False, "error": str(e)})
+
+    return BatchDetectionResponse(
+        success=True,
+        message=f"批量检测完成，共 {len(results)} 张",
+        data={"results": results, "total": len(results)}
+    )
+
+
+@router.post("/video", response_model=VideoDetectionResponse)
+async def detect_video(
+    file: UploadFile = File(...),
+    model_name: str = Form("pest-v1"),
+    conf: float = Form(None),
+    frame_interval: int = Form(5, ge=1, le=30),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        filename = await save_upload_file(file, settings.VIDEO_DIR, max_size=settings.VIDEO_MAX_SIZE)
+        video_path = os.path.join(settings.VIDEO_DIR, filename)
+
+        actual_model = detection_service.current_model_version or model_name
+        result = detection_service.detect_video(video_path, actual_model, conf=conf, frame_interval=frame_interval)
+
+        history = DetectionHistory(
+            user_id=current_user.id,
+            filename=file.filename or filename,
+            media_type="video",
+            video_url=result.video_url,
+            result_video_url=result.result_video_url,
+            frame_count=result.total_frames,
+            fps=result.fps,
+            duration=result.duration,
+            model_name=result.model_name,
+            total_objects=result.total_objects,
+            detection_time=result.detection_time,
+            boxes=[],
+            status="completed",
+        )
+        db.add(history)
+        db.commit()
+        db.refresh(history)
+
+        result_dict = result.model_dump()
+        result_dict["detection_id"] = str(history.id)
+
+        return VideoDetectionResponse(
+            success=True,
+            message="视频检测成功",
+            data=result_dict
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"视频检测失败: {str(e)}")
 
 
 @router.get("/model/status", response_model=ModelStatusResponse)

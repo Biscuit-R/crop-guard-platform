@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     STATIC_DIR: str = str(Paths.static())
     UPLOAD_DIR: str = str(Paths.uploads())
     RESULT_DIR: str = str(Paths.results())
+    VIDEO_DIR: str = str(Paths.videos())
+    RESULT_VIDEO_DIR: str = str(Paths.result_videos())
+    VIDEO_MAX_SIZE: int = 200 * 1024 * 1024  # 200MB
 
     YOLO_MODEL_PATH: str = str(Paths.yolo_model())
     MODEL_DIR: str = str(Paths.models_dir())

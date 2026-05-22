@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import {
   DataLine,
@@ -55,10 +55,13 @@ import {
   Collection,
   Operation,
   User,
+  UserFilled,
 } from "@element-plus/icons-vue";
+import { useUserStore } from "../stores/user";
 
 const router = useRouter();
 const route = useRoute();
+const userStore = useUserStore();
 
 const isLandscape = ref(window.innerWidth >= 900 && window.innerWidth > window.innerHeight);
 
@@ -69,17 +72,24 @@ const checkOrientation = () => {
 onMounted(() => window.addEventListener("resize", checkOrientation));
 onUnmounted(() => window.removeEventListener("resize", checkOrientation));
 
-const allMenuItems = [
-  { name: "数据看板", icon: DataLine, path: "/dashboard" },
-  { name: "病虫害检测", icon: Picture, path: "/detection" },
-  { name: "检测历史", icon: Clock, path: "/history" },
-  { name: "图鉴", icon: Collection, path: "/guide" },
-  { name: "高级功能", icon: Operation, path: "/tools" },
-  { name: "我的", icon: User, path: "/profile" },
-];
+const allMenuItems = computed(() => {
+  const items = [
+    { name: "数据看板", icon: DataLine, path: "/dashboard" },
+    { name: "病虫害检测", icon: Picture, path: "/detection" },
+    { name: "检测历史", icon: Clock, path: "/history" },
+    { name: "图鉴", icon: Collection, path: "/guide" },
+    { name: "高级功能", icon: Operation, path: "/tools" },
+    { name: "我的", icon: User, path: "/profile" },
+  ];
+  if (userStore.isAdmin) {
+    items.splice(5, 0, { name: "用户管理", icon: UserFilled, path: "/admin" });
+  }
+  return items;
+});
 
 const isActive = (item) => {
   if (item.path === "/tools") return route.path.startsWith("/tools");
+  if (item.path === "/admin") return route.path.startsWith("/admin");
   return route.path === item.path;
 };
 

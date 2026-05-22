@@ -68,6 +68,16 @@ class Paths:
         return cls.static() / "results"
 
     @classmethod
+    def videos(cls):
+        """上传视频目录"""
+        return cls.static() / "videos"
+
+    @classmethod
+    def result_videos(cls):
+        """标注视频结果目录"""
+        return cls.static() / "result_videos"
+
+    @classmethod
     def models_dir(cls):
         """模型文件目录"""
         return cls.backend() / "models"
@@ -105,6 +115,8 @@ class Paths:
             cls.static(),
             cls.uploads(),
             cls.results(),
+            cls.videos(),
+            cls.result_videos(),
             cls.models_dir(),
             cls.logs(),
             cls.temp(),
