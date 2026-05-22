@@ -1,5 +1,5 @@
 <template>
-  <div class="right-panel">
+  <div class="panel-wrapper">
     <div class="cards-row">
       <div class="result-card">
         <div class="card-header">
@@ -34,18 +34,21 @@
       </div>
     </div>
 
-    <div class="action-buttons">
-      <el-button size="small" class="btn-secondary" @click="$emit('redetect')">
-        <el-icon><Refresh /></el-icon>
-        重新检测
-      </el-button>
-      <el-button type="primary" size="small" class="btn-primary">查看完整报告</el-button>
+    <div class="action-cards">
+      <div class="action-card" @click="$emit('redetect')">
+        <el-icon class="action-icon"><Refresh /></el-icon>
+        <span class="action-label">重新检测</span>
+      </div>
+      <div class="action-card action-card--primary">
+        <el-icon class="action-icon"><Document /></el-icon>
+        <span class="action-label">查看完整报告</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { List, CircleCheck, ChatDotRound, Refresh } from "@element-plus/icons-vue";
+import { List, CircleCheck, ChatDotRound, Refresh, Document } from "@element-plus/icons-vue";
 
 defineProps({
   modelStatus: { type: Object, default: () => ({}) },
@@ -56,29 +59,71 @@ defineEmits(["redetect"]);
 </script>
 
 <style scoped>
-.right-panel { width: 100%; display: flex; flex-direction: column; gap: 10px; }
-.cards-row { display: flex; gap: 12px; }
-.cards-row .result-card { flex: 1; min-width: 0; }
+.panel-wrapper {
+  width: 100%; display: flex; flex-direction: column; gap: 12px;
+  flex: 1; min-height: 0;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+}
 
-.result-card { background-color: #ffffff; border-radius: 12px; padding: 14px; }
-.card-header { display: flex; align-items: center; margin-bottom: 10px; }
+.cards-row { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.cards-row .result-card { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+.result-card {
+  background-color: #ffffff; border-radius: 12px; padding: 14px;
+  box-shadow: var(--card-shadow); border: 1px solid var(--border-color);
+  transition: box-shadow 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  overflow: hidden;
+}
+.result-card:nth-child(1) { animation-delay: 0.1s; }
+.result-card:nth-child(2) { animation-delay: 0.2s; }
+.result-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+
+.card-header { display: flex; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
 .card-header .el-icon { font-size: 15px; color: var(--primary-color); margin-right: 6px; }
 .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
-.empty-icon { font-size: 28px; color: var(--success-color); margin-bottom: 6px; }
+.empty-icon { font-size: 28px; color: var(--success-color); margin-bottom: 6px; animation: pulse-glow 2.5s ease-in-out infinite; }
 .empty-text { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
 .empty-desc { font-size: 12px; color: var(--text-secondary); }
 
-.detection-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
-.detection-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background-color: #f9fafb; border-radius: 6px; }
+.detection-list { display: flex; flex-direction: column; gap: 4px; flex: 1; min-height: 0; overflow-y: auto; }
+.detection-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 10px; background-color: #f9fafb; border-radius: 6px;
+  transition: background-color 0.2s ease, transform 0.2s var(--ease-out-expo);
+  animation: fade-in 0.6s var(--ease-out-expo) both;
+}
+.detection-item:nth-child(1) { animation-delay: 0.3s; }
+.detection-item:nth-child(2) { animation-delay: 0.4s; }
+.detection-item:nth-child(3) { animation-delay: 0.5s; }
+.detection-item:nth-child(4) { animation-delay: 0.6s; }
+.detection-item:nth-child(5) { animation-delay: 0.7s; }
+.detection-item:hover { background-color: #f0fdfa; transform: translateX(2px); }
+
 .item-name { font-size: 13px; color: var(--text-primary); }
 .item-confidence { font-size: 12px; font-weight: 500; color: var(--primary-color); }
 
-.diagnosis-content { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.diagnosis-content { font-size: 12px; color: var(--text-secondary); line-height: 1.5; flex: 1; min-height: 0; overflow-y: auto; }
 .diagnosis-content p { margin: 0; }
 
-.action-buttons { display: flex; gap: 8px; }
-.btn-secondary { flex: 1; border-radius: 8px; }
-.btn-primary { flex: 2; border-radius: 8px; background: linear-gradient(135deg, #0d9488, #14b8a6); border-color: #0d9488; }
+.action-cards { display: flex; gap: 10px; flex-shrink: 0; animation: fade-up 0.6s var(--ease-out-expo) both; animation-delay: 0.3s; }
+.action-card {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 16px 0; background: #ffffff; border-radius: 12px; cursor: pointer;
+  transition: box-shadow 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+  box-shadow: var(--card-shadow); border: 1px solid var(--border-color);
+}
+.action-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+.action-card:active { transform: scale(0.97); box-shadow: var(--card-shadow-active); }
+.action-card--primary { background: linear-gradient(135deg, #0d9488, #14b8a6); border-color: #0d9488; }
+.action-card--primary .action-icon,
+.action-card--primary .action-label { color: #ffffff; }
+.action-card--primary:hover { box-shadow: 0 4px 14px rgba(13,148,136,0.25); }
+
+.action-icon { font-size: 16px; color: var(--primary-color); transition: transform 0.3s var(--ease-spring); }
+.action-card:hover .action-icon { transform: scale(1.1); }
+.action-card--primary:hover .action-icon { transform: rotate(-10deg) scale(1.1); }
+.action-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 </style>

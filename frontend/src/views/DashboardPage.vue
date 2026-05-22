@@ -45,23 +45,35 @@
     </div>
 
     <div class="content-row">
-      <div class="quick-actions">
+      <div class="announcements">
         <div class="section-card">
           <div class="section-header">
-            <span class="section-title">快速操作</span>
+            <span class="section-title">更新公告</span>
           </div>
-          <div class="action-grid">
-            <div class="action-item" @click="$router.push('/detection')">
-              <el-icon :size="32" color="#0d9488"><Upload /></el-icon>
-              <span>上传检测</span>
+          <div class="announcement-list">
+            <div class="announcement-item">
+              <div class="announcement-dot"></div>
+              <div class="announcement-content">
+                <div class="announcement-title">视频检测功能上线</div>
+                <div class="announcement-desc">支持上传视频进行逐帧检测，自动生成标注视频和统计摘要</div>
+                <div class="announcement-time">2026-05-22</div>
+              </div>
             </div>
-            <div class="action-item" @click="$router.push('/history')">
-              <el-icon :size="32" color="#16a34a"><Clock /></el-icon>
-              <span>查看历史</span>
+            <div class="announcement-item">
+              <div class="announcement-dot"></div>
+              <div class="announcement-content">
+                <div class="announcement-title">批量检测优化</div>
+                <div class="announcement-desc">批量检测支持更多图片格式，检测速度提升 30%</div>
+                <div class="announcement-time">2026-05-18</div>
+              </div>
             </div>
-            <div class="action-item" @click="$router.push('/guide')">
-              <el-icon :size="32" color="#3b82f6"><Collection /></el-icon>
-              <span>病虫害图鉴</span>
+            <div class="announcement-item">
+              <div class="announcement-dot"></div>
+              <div class="announcement-content">
+                <div class="announcement-title">病虫害图鉴更新</div>
+                <div class="announcement-desc">新增 12 种常见病虫害类别，覆盖更多农作物场景</div>
+                <div class="announcement-time">2026-05-15</div>
+              </div>
             </div>
           </div>
         </div>
@@ -98,7 +110,7 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import {
-  Picture, Aim, CircleCheck, Calendar, Upload, Clock, Collection,
+  Picture, Aim, CircleCheck, Calendar,
 } from "@element-plus/icons-vue";
 import { getDashboardStats } from "../api/dashboard";
 import { getHistoryList } from "../api/history";
@@ -174,27 +186,48 @@ onMounted(async () => {
 
   .content-row {
     display: flex; gap: 24px;
-    .quick-actions { width: 320px; flex-shrink: 0; }
+    .announcements { width: 320px; flex-shrink: 0; }
     .recent-section { flex: 1; min-width: 0; }
   }
 
   .section-card {
     background-color: var(--surface); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--card-shadow);
-    animation: fade-up 0.5s var(--ease-out-expo) 0.25s both;
+    animation: fade-up 0.6s var(--ease-out-expo) both;
     .section-header {
       display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
       .section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
     }
   }
 
-  .action-grid {
-    display: flex; flex-direction: column; gap: 12px;
-    .action-item {
-      display: flex; align-items: center; gap: 12px; padding: 16px;
-      background-color: var(--bg-color); border-radius: var(--radius-md); cursor: pointer;
-      transition: all 0.25s var(--ease-out-expo); font-size: 14px; font-weight: 500; color: var(--text-primary);
-      &:hover { background-color: #ccfbf1; transform: translateX(3px); }
-      &:active { transform: translateX(1px) scale(0.98); }
+  .announcements .section-card { animation-delay: 0.25s; }
+  .recent-section .section-card { animation-delay: 0.4s; }
+
+  .announcement-list {
+    display: flex; flex-direction: column; gap: 16px;
+    .announcement-item {
+      display: flex; gap: 12px;
+      animation: fade-in 0.6s var(--ease-out-expo) both;
+      &:nth-child(1) { animation-delay: 0.3s; }
+      &:nth-child(2) { animation-delay: 0.4s; }
+      &:nth-child(3) { animation-delay: 0.5s; }
+
+      .announcement-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--primary-color); margin-top: 6px; flex-shrink: 0;
+      }
+
+      .announcement-content {
+        flex: 1; min-width: 0;
+        .announcement-title {
+          font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;
+        }
+        .announcement-desc {
+          font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 6px;
+        }
+        .announcement-time {
+          font-size: 11px; color: var(--text-secondary);
+        }
+      }
     }
   }
 

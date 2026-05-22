@@ -1,6 +1,12 @@
 <template>
   <div class="dataset-tools-page">
     <div class="page-header">
+      <div class="header-top">
+        <el-button text @click="$router.push('/tools')">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>返回高级功能</span>
+        </el-button>
+      </div>
       <h1 class="page-title">数据集工具</h1>
       <p class="page-desc">通用数据集格式转化工具，支持 VOC、COCO、CSV 格式自动转化为 YOLO 训练格式</p>
     </div>
@@ -237,6 +243,7 @@ import {
   Download,
   FolderOpened,
   VideoPlay,
+  ArrowLeft,
 } from "@element-plus/icons-vue";
 import { convertDataset, downloadConvertedDataset } from "../api/dataset";
 import { useUserStore } from "../stores/user";
@@ -331,6 +338,11 @@ const handleReset = () => {
 
 .page-header {
   margin-bottom: 24px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+}
+
+.header-top {
+  margin-bottom: 16px;
 }
 
 .page-title {
@@ -356,6 +368,8 @@ const handleReset = () => {
 
 .info-card {
   margin-bottom: 24px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.1s;
 }
 
 .info-content {
@@ -412,6 +426,8 @@ const handleReset = () => {
 
 .convert-card {
   margin-bottom: 24px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.2s;
 }
 
 .format-radio-icon {
@@ -435,6 +451,7 @@ const handleReset = () => {
 
 .result-card {
   margin-bottom: 24px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
 }
 
 .result-number {
@@ -466,6 +483,8 @@ const handleReset = () => {
 
 .structure-card {
   margin-bottom: 24px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.3s;
 }
 
 .structure-grid {

@@ -117,6 +117,7 @@ const navigateTo = (path) => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 32px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
 }
 
 .page-title {
@@ -142,11 +143,19 @@ const navigateTo = (path) => {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
 }
+.feature-card:nth-child(1) { animation-delay: 0.1s; }
+.feature-card:nth-child(2) { animation-delay: 0.15s; }
+.feature-card:nth-child(3) { animation-delay: 0.2s; }
+.feature-card:nth-child(4) { animation-delay: 0.25s; }
+.feature-card:nth-child(5) { animation-delay: 0.3s; }
+.feature-card:nth-child(6) { animation-delay: 0.35s; }
 
 .feature-card:hover {
   border-color: var(--primary-color);
   transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .feature-card.disabled {

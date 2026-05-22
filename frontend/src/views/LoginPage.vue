@@ -188,6 +188,8 @@ const handleLogin = () => {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.1s;
 }
 
 .card-middle {
@@ -197,6 +199,8 @@ const handleLogin = () => {
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.2s;
 }
 
 .card-bottom {
@@ -205,6 +209,8 @@ const handleLogin = () => {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.5);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.3s;
 }
 
 .login-header {
@@ -223,6 +229,8 @@ const handleLogin = () => {
   justify-content: center;
   box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
   flex-shrink: 0;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.15s;
 }
 
 .logo-text {
@@ -249,7 +257,10 @@ const handleLogin = () => {
 
 .input-group {
   margin-bottom: 4px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
 }
+.input-group:nth-child(1) { animation-delay: 0.25s; }
+.input-group:nth-child(2) { animation-delay: 0.3s; }
 
 .input-label {
   display: block;
@@ -264,6 +275,8 @@ const handleLogin = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.32s;
 }
 
 .login-btn {
@@ -278,6 +291,8 @@ const handleLogin = () => {
   letter-spacing: 0.04em;
   position: relative;
   overflow: hidden;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.35s;
 }
 
 .login-btn:hover {

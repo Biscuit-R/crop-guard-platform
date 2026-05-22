@@ -38,7 +38,26 @@
   flex: 1;
   padding: 24px 32px;
   overflow-y: auto;
-  background-color: #f0fdfa;
+  position: relative;
+}
+
+.content::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url('/main-bg.jpg') no-repeat center center;
+  background-size: cover;
+  z-index: -2;
+}
+
+.content::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(240, 253, 250, 0.22);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: -1;
 }
 
 .bottom-nav {

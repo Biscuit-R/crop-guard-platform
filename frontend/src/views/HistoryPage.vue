@@ -286,12 +286,14 @@ const handlePageChange = (page) => {
 
   .page-header {
     margin-bottom: 24px;
+    animation: fade-up 0.6s var(--ease-out-expo) both;
     .page-title { font-size: 24px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
     .page-subtitle { font-size: 14px; color: var(--text-secondary); }
   }
 
   .search-bar {
     display: flex; gap: 16px; margin-bottom: 24px; align-items: center;
+    animation: fade-up 0.6s var(--ease-out-expo) both; animation-delay: 0.1s;
     .search-input { flex: 1; max-width: 360px; }
     .filter-select { width: 140px; }
   }
@@ -301,8 +303,14 @@ const handlePageChange = (page) => {
   .history-card {
     background-color: #ffffff; border-radius: 12px; padding: 20px;
     box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 20px;
-    transition: all 0.2s;
-    &:hover { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); transform: translateY(-2px); }
+    transition: box-shadow 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+    animation: fade-up 0.6s var(--ease-out-expo) both;
+    &:nth-child(1) { animation-delay: 0.15s; }
+    &:nth-child(2) { animation-delay: 0.25s; }
+    &:nth-child(3) { animation-delay: 0.35s; }
+    &:nth-child(4) { animation-delay: 0.45s; }
+    &:nth-child(5) { animation-delay: 0.55s; }
+    &:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
 
     .record-preview {
       position: relative; width: 120px; height: 80px; border-radius: 8px; overflow: hidden;
@@ -341,7 +349,8 @@ const handlePageChange = (page) => {
 
   .empty-state {
     display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0;
-    .empty-icon { color: #9ca3af; margin-bottom: 16px; }
+    animation: fade-up 0.6s var(--ease-out-expo) both; animation-delay: 0.2s;
+    .empty-icon { color: #9ca3af; margin-bottom: 16px; animation: pulse-glow 2.5s ease-in-out infinite; }
     .empty-text { font-size: 15px; color: var(--text-secondary); margin-bottom: 24px; }
   }
 

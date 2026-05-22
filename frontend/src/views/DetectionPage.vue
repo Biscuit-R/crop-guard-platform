@@ -460,10 +460,10 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 </script>
 
 <style scoped>
-.detection-page { width: 100%; max-width: 1040px; margin: 0 auto; }
+.detection-page { width: 100%; max-width: 1040px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; }
 
 /* === 页头 === */
-.page-header { margin-bottom: 24px; }
+.page-header { margin-bottom: 24px; flex-shrink: 0; animation: fade-up 0.6s var(--ease-out-expo) both; }
 .page-title { font-size: 26px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.02em; }
 .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
 
@@ -471,6 +471,8 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .main-body {
   display: flex;
   gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
 .controls-sidebar {
@@ -484,19 +486,27 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .content-area {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .result-layout {
   display: flex; flex-direction: column; gap: 16px;
+  flex: 1; min-height: 0;
 }
 
 .result-left {
-  flex: 2; min-width: 0;
+  flex: 0 0 auto; min-width: 0;
   background: #ffffff; border-radius: 14px; padding: 24px;
   display: flex; flex-direction: column;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+  transition: box-shadow 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.15s;
 }
+.result-left:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
 .result-left.has-result {
   align-self: flex-start;
 }
@@ -509,13 +519,20 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
   border-radius: 12px;
   padding: 4px;
   gap: 2px;
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.1s;
 }
 .mode-btn {
   display: flex; align-items: center; gap: 8px; padding: 12px 14px;
   border: none; background: transparent; border-radius: 10px; cursor: pointer;
   font-size: 14px; font-weight: 500; color: var(--text-secondary);
   transition: all 0.2s ease; width: 100%;
+  animation: fade-in 0.6s var(--ease-out-expo) both;
 }
+.mode-btn:nth-child(1) { animation-delay: 0.15s; }
+.mode-btn:nth-child(2) { animation-delay: 0.2s; }
+.mode-btn:nth-child(3) { animation-delay: 0.25s; }
+.mode-btn:nth-child(4) { animation-delay: 0.3s; }
 .mode-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.5); }
 .mode-btn.active {
   color: var(--primary-color); background: #ffffff;
@@ -526,6 +543,8 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .settings-inline {
   background: #ffffff; border-radius: 14px; padding: 18px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.2s;
 }
 .settings-title {
   display: flex; align-items: center; gap: 6px;
@@ -541,6 +560,8 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .model-info-card {
   background: #ffffff; border-radius: 12px; padding: 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  animation: fade-up 0.6s var(--ease-out-expo) both;
+  animation-delay: 0.3s;
 }
 .model-info-item {
   display: flex; justify-content: space-between; align-items: flex-start;
