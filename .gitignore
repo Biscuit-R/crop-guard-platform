@@ -54,3 +54,9 @@ training/versions.json
 
 # Jupyter notebooks
 .ipynb_checkpoints/
+
+# Internal docs (not included in release)
+UPDATE_LOG.md
+CODE_REVIEW_REPORT.md
+DESIGN.md
+PRODUCT.md

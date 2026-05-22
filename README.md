@@ -1,109 +1,15 @@
 # Crop Guard Platform
 
-农作物病虫害智能检测平台 — 基于 YOLO 的农作物病虫害识别与诊断系统
+农作物病虫害智能检测平台，基于 YOLO 的农作物病虫害识别与诊断系统。
 
 ## 核心功能
 
-- **病虫害检测**：上传农作物图片，AI 自动识别病虫害类型
-- **检测历史**：记录所有检测结果，支持搜索和筛选
+- **病虫害检测**：支持单图检测、批量检测、视频检测三种模式
+- **视频分析**：自动抽帧检测，生成标注视频和病虫害统计摘要
+- **检测历史**：记录所有检测结果，支持关键词搜索和状态筛选
 - **病虫害图鉴**：102 种常见农作物病虫害的详细资料
 - **数据看板**：检测统计、趋势分析、快速预览
-
-## 创新亮点
-
-### 自动模型管理
-
-训练完成后自动执行：
-1. **模型部署**：自动复制 `best.pt` 到 `backend/models/`
-2. **MinIO 上传**：自动上传模型和训练元数据到对象存储
-3. **元数据记录**：保存训练参数、数据集信息、训练指标
-
-```bash
-# 训练并自动上传
-python train.py
-
-# 训练但不上传
-python train.py --no-upload
-```
-
-### 智能模型加载
-
-检测服务自动发现和加载最新模型，无需手动重启：
-
-- **自动发现**：启动时扫描 `backend/models/`，按优先级选择（`best.pt` > 最新版本化模型 > 配置回退）
-- **热重载**：每次检测前检查模型文件变更，自动切换到新模型
-- **版本感知**：跟踪当前模型版本、文件修改时间、类别数量
-
-```bash
-# 查看当前模型状态
-curl http://localhost:8081/api/detection/model/status
-
-# 手动触发模型重载
-curl -X POST http://localhost:8081/api/detection/model/reload
-```
-
-**模型加载优先级**：
-| 优先级 | 文件 | 说明 |
-|--------|------|------|
-| 1 | `best.pt` | 训练脚本部署的当前模型 |
-| 2 | `best_vX.X.X.pt` | 最新版本化模型（按修改时间） |
-| 3 | `yolo11n.pt` | 配置文件中的默认模型 |
-
-### API 模型版本管理
-
-通过 REST API 管理和切换模型版本：
-
-```bash
-# 列出所有可用模型
-curl http://localhost:8081/api/detection/models
-
-# 切换到指定版本
-curl -X POST http://localhost:8081/api/detection/models/switch \
-  -H "Content-Type: application/json" \
-  -d '{"version": "v1.0.0"}'
-
-# 查看训练版本历史
-curl http://localhost:8081/api/detection/models/history
-```
-
-**模型管理 API 一览**：
-| 方法 | 端点 | 说明 |
-|------|------|------|
-| GET | `/api/detection/model/status` | 当前模型状态 |
-| POST | `/api/detection/model/reload` | 重载当前模型 |
-| GET | `/api/detection/models` | 列出所有可用模型 |
-| POST | `/api/detection/models/switch` | 切换到指定版本 |
-| GET | `/api/detection/models/history` | 训练版本历史 |
-
-### 通用数据集转化工具
-
-内置 `convert_dataset.py`，支持将主流格式自动转化为 YOLO 训练格式：
-
-```bash
-# VOC → YOLO (LabelImg 标注格式)
-python convert_dataset.py --input ./voc_data --format voc --classes classes.txt --output ./yolo_data
-
-# COCO → YOLO (Microsoft COCO 格式)
-python convert_dataset.py --input ./coco_data --format coco --output ./yolo_data
-
-# CSV → YOLO (自定义 CSV 格式)
-python convert_dataset.py --input ./csv_data --format csv --classes classes.txt --output ./yolo_data
-```
-
-**支持的格式**：
-| 格式 | 来源 | 标注文件 | 坐标格式 |
-|------|------|----------|----------|
-| YOLO | Ultralytics | `.txt` | 归一化中心点 (x, y, w, h) |
-| VOC | Pascal VOC / LabelImg | `.xml` | 绝对坐标 (xmin, ymin, xmax, ymax) |
-| COCO | Microsoft COCO | `.json` | 绝对坐标 (x, y, w, h) |
-| CSV | 自定义 | `.csv` | 多种格式 |
-
-**自动化流程**：
-1. 自动识别输入格式
-2. 自动转化标注格式
-3. 自动复制图片文件
-4. 自动生成 `data.yaml` 配置文件
-5. 转化完成即可直接训练
+- **用户管理**：admin/user 两级权限，支持角色切换、账户启禁用
 
 ## 技术栈
 
@@ -141,80 +47,43 @@ npm run dev
 
 前端运行在 http://localhost:5174
 
-## 模型训练
+## 检测功能
 
-### 数据集准备
+### 单图检测
 
-将数据集放在 `database/` 目录，结构如下：
+上传一张农作物图片，AI 自动识别病虫害类型、位置和置信度。
 
-```
-database/
-├── images/
-│   ├── train/    # 训练集图片
-│   └── val/      # 验证集图片
-└── labels/
-    ├── train/    # 训练集标注 (YOLO 格式)
-    └── val/      # 验证集标注 (YOLO 格式)
-```
+### 批量检测
 
-**标注格式**（每行一个目标）：
-```
-class_id x_center y_center width height
-```
-所有坐标值归一化到 0-1 范围。
+一次上传多张图片，系统逐张检测并返回结果。支持切换查看每张图片的检测详情。
 
-### 本地训练
+### 视频检测
 
-```bash
-cd training
+上传视频文件，系统自动抽帧检测（可配置帧间隔），输出带标注框的结果视频和病虫害统计摘要。
 
-# 使用 GPU 训练（推荐，自动版本管理）
-python train_local.py
+### 检测参数
 
-# 自定义参数
-python train.py --epochs 50 --batch 8 --device cpu
+- **置信度阈值**：可调节（10%~100%），控制检测灵敏度
+- **模型切换**：支持多版本模型动态切换
+- **视频抽帧间隔**：可配置每 N 帧检测一次
 
-# 指定版本升级类型
-python train.py --bump minor              # 次版本 v1.0.0 → v1.1.0
-python train.py --bump major              # 主版本 v1.0.0 → v2.0.0
+## 用户系统
 
-# 指定版本号
-python train.py --version v2.0.0 --description "新增白粉病检测"
+### 角色权限
 
-# 训练但不上传到 MinIO
-python train.py --no-upload
-```
+| 角色 | 权限 |
+|------|------|
+| admin | 全部功能 + 用户管理 |
+| user | 检测 / 历史 / 图鉴 / 个人中心 |
 
-**版本管理**：训练完成后自动执行：
-1. 语义化版本命名（v1.0.0）
-2. 自动部署带版本号的模型到 `backend/models/`
-3. 自动上传模型 + 元数据到 MinIO
-4. 记录训练指标（mAP50、precision、recall）
+首个注册用户自动成为管理员，后续注册默认为普通用户。
 
-### 云端训练（推荐）
+### 安全特性
 
-1. 上传 `database/`、`training/` 目录到云平台
-2. 运行 `python train.py`
-3. 下载 `best.pt` 放到 `backend/models/` 目录
-
-**推荐平台**：
-- Google Colab（免费 T4 GPU）
-- AutoDL（国内 GPU 云平台）
-- 阿里云 / 腾讯云 GPU 实例
-
-### 使用转化工具
-
-如果数据集不是 YOLO 格式：
-
-```bash
-cd training
-
-# 1. 转化数据集
-python convert_dataset.py --input ./your_data --format voc --classes classes.txt --output ../database
-
-# 2. 开始训练
-python train.py --data ../database/data.yaml
-```
+- JWT 认证 + JTI 黑名单机制
+- Token 版本控制（修改密码自动失效旧 token）
+- 记住我功能（localStorage / sessionStorage）
+- 路由守卫 + 管理员权限校验
 
 ## 项目结构
 
@@ -227,7 +96,6 @@ crop-guard-platform/
 │   │   ├── services/          # 业务逻辑
 │   │   └── utils/             # 工具函数
 │   ├── models/                # YOLO 模型文件
-│   │   └── yolo11n.pt
 │   ├── static/                # 静态文件
 │   ├── main.py                # 后端入口
 │   └── requirements.txt
@@ -236,20 +104,63 @@ crop-guard-platform/
 │   │   ├── api/               # API 调用
 │   │   ├── components/        # 组件
 │   │   ├── views/             # 页面
+│   │   ├── stores/            # Pinia 状态管理
 │   │   └── router/            # 路由
 │   └── package.json
-├── training/                   # 训练相关 ⭐
+├── training/                   # 训练相关
 │   ├── train.py               # 通用训练脚本
 │   ├── train_local.py         # 本地训练脚本
-│   ├── train_colab.ipynb      # Colab 训练 notebook
-│   ├── convert_dataset.py     # 数据集转化工具
-│   ├── data.yaml              # 数据集配置
-│   └── classes_example.txt    # 示例类别文件
+│   └── convert_dataset.py     # 数据集转化工具
 ├── database/                   # 数据集目录
-├── docker-compose.yml          # 基础设施配置
-├── ARCHITECTURE.md             # 架构文档
-└── README.md
+└── docker-compose.yml          # 基础设施配置
 ```
+
+## API 一览
+
+### 认证
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/auth/register` | 用户注册 |
+| POST | `/api/auth/login` | 用户登录 |
+| POST | `/api/auth/logout` | 退出登录 |
+| GET | `/api/auth/me` | 获取当前用户信息 |
+| PUT | `/api/auth/password` | 修改密码 |
+
+### 检测
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/detection/single` | 单图检测 |
+| POST | `/api/detection/batch` | 批量检测 |
+| POST | `/api/detection/video` | 视频检测 |
+| GET | `/api/detection/pests/list` | 病虫害列表 |
+
+### 模型管理
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/detection/model/status` | 当前模型状态 |
+| POST | `/api/detection/model/reload` | 重载模型 |
+| GET | `/api/detection/models` | 可用模型列表 |
+| POST | `/api/detection/models/switch` | 切换模型版本 |
+
+### 历史记录
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/history/list` | 检测历史（支持 keyword/status 筛选） |
+| GET | `/api/history/{id}` | 检测详情 |
+| DELETE | `/api/history/{id}` | 删除记录 |
+
+### 管理员
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/admin/users` | 用户列表 |
+| PUT | `/api/admin/users/{id}/role` | 修改用户角色 |
+| PUT | `/api/admin/users/{id}/status` | 启用/禁用用户 |
+| DELETE | `/api/admin/users/{id}` | 删除用户 |
 
 ## 配置说明
 
