@@ -146,8 +146,8 @@ onMounted(fetchPests);
       .stat-icon {
         width: 50px; height: 50px; border-radius: 12px; display: flex;
         align-items: center; justify-content: center; color: white; font-size: 24px;
-        &.pest-icon { background: linear-gradient(135deg, #0d9488, #14b8a6); }
-        &.category-icon { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        &.pest-icon { background: #0d9488; }
+        &.category-icon { background: #3b82f6; }
       }
       .stat-info {
         .stat-value { font-size: 24px; font-weight: 600; color: var(--text-primary); }

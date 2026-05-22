@@ -7,7 +7,7 @@
 
     <div class="stats-cards">
       <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6)">
+        <div class="stat-icon" style="background: #0d9488">
           <el-icon :size="24" color="#ffffff"><Picture /></el-icon>
         </div>
         <div class="stat-info">
@@ -16,7 +16,7 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #16a34a, #22c55e)">
+        <div class="stat-icon" style="background: #16a34a">
           <el-icon :size="24" color="#ffffff"><Aim /></el-icon>
         </div>
         <div class="stat-info">
@@ -25,7 +25,7 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa)">
+        <div class="stat-icon" style="background: #3b82f6">
           <el-icon :size="24" color="#ffffff"><CircleCheck /></el-icon>
         </div>
         <div class="stat-info">
@@ -34,7 +34,7 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24)">
+        <div class="stat-icon" style="background: #f59e0b">
           <el-icon :size="24" color="#ffffff"><Calendar /></el-icon>
         </div>
         <div class="stat-info">
@@ -146,16 +146,24 @@ onMounted(async () => {
   .stats-cards {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;
     .stat-card {
-      background-color: #ffffff; border-radius: 12px; padding: 20px;
+      background-color: var(--surface); border-radius: var(--radius-lg); padding: 20px;
       box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 16px;
-      transition: all 0.2s;
-      &:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); transform: translateY(-2px); }
+      transition: all 0.3s var(--ease-out-expo);
+      animation: fade-up 0.5s var(--ease-out-expo) both;
+      &:nth-child(1) { animation-delay: 0.05s; }
+      &:nth-child(2) { animation-delay: 0.1s; }
+      &:nth-child(3) { animation-delay: 0.15s; }
+      &:nth-child(4) { animation-delay: 0.2s; }
+      &:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+      &:active { transform: translateY(0) scale(0.98); box-shadow: var(--card-shadow-active); }
       .stat-icon {
-        width: 52px; height: 52px; border-radius: 12px; display: flex;
+        width: 48px; height: 48px; border-radius: var(--radius-md); display: flex;
         align-items: center; justify-content: center; flex-shrink: 0;
+        transition: transform 0.3s var(--ease-spring);
       }
+      &:hover .stat-icon { transform: scale(1.05); }
       .stat-info {
-        .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
         .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
       }
     }
@@ -168,7 +176,8 @@ onMounted(async () => {
   }
 
   .section-card {
-    background-color: #ffffff; border-radius: 12px; padding: 20px; box-shadow: var(--card-shadow);
+    background-color: var(--surface); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--card-shadow);
+    animation: fade-up 0.5s var(--ease-out-expo) 0.25s both;
     .section-header {
       display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
       .section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
@@ -179,9 +188,10 @@ onMounted(async () => {
     display: flex; flex-direction: column; gap: 12px;
     .action-item {
       display: flex; align-items: center; gap: 12px; padding: 16px;
-      background-color: #f0fdfa; border-radius: 10px; cursor: pointer;
-      transition: all 0.2s; font-size: 14px; font-weight: 500; color: var(--text-primary);
-      &:hover { background-color: #ccfbf1; transform: translateX(4px); }
+      background-color: var(--bg-color); border-radius: var(--radius-md); cursor: pointer;
+      transition: all 0.25s var(--ease-out-expo); font-size: 14px; font-weight: 500; color: var(--text-primary);
+      &:hover { background-color: #ccfbf1; transform: translateX(3px); }
+      &:active { transform: translateX(1px) scale(0.98); }
     }
   }
 
@@ -194,10 +204,10 @@ onMounted(async () => {
     display: flex; flex-direction: column; gap: 12px;
     .recent-item {
       display: flex; align-items: center; gap: 12px; padding: 12px;
-      background-color: #f9fafb; border-radius: 8px; transition: all 0.2s;
+      background-color: var(--bg-muted); border-radius: var(--radius-md); transition: background-color 0.2s ease;
       &:hover { background-color: #f0fdfa; }
       .recent-preview {
-        width: 48px; height: 48px; border-radius: 6px; overflow: hidden;
+        width: 48px; height: 48px; border-radius: var(--radius-sm); overflow: hidden;
         background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         img { width: 100%; height: 100%; object-fit: cover; }
       }

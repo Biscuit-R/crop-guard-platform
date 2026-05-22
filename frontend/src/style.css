@@ -1,6 +1,7 @@
 :root {
   --primary-color: #0d9488;
   --primary-light: rgba(13, 148, 136, 0.08);
+  --primary-glow: rgba(13, 148, 136, 0.15);
   --primary-hover: #0f766e;
   --success-color: #22c55e;
   --accent-green: #16a34a;
@@ -8,7 +9,17 @@
   --text-secondary: #6b7280;
   --border-color: #e5e7eb;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 6px 16px rgba(13, 148, 136, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --card-shadow-active: 0 2px 8px rgba(13, 148, 136, 0.12);
   --bg-color: #f0fdfa;
+  --bg-muted: #f9fafb;
+  --surface: #ffffff;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 * {
@@ -28,4 +39,105 @@ body {
 #app {
   width: 100%;
   min-height: 100vh;
+}
+
+/* ========== 全局交互反馈 ========== */
+
+/* 按钮水润按压效果 */
+.el-button {
+  transition: all 0.2s var(--ease-out-expo) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.el-button:not(.is-disabled):active {
+  transform: scale(0.97);
+  filter: brightness(0.95);
+}
+
+.el-button--primary:not(.is-disabled):active {
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+/* 卡片悬浮反馈 */
+.el-card,
+[class*="stat-card"],
+[class*="section-card"] {
+  transition: box-shadow 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo) !important;
+}
+
+.el-card:hover,
+[class*="stat-card"]:hover,
+[class*="section-card"]:hover {
+  transform: translateY(-1px);
+}
+
+/* 输入框聚焦水润光晕 */
+.el-input__wrapper {
+  transition: box-shadow 0.25s var(--ease-out-expo), border-color 0.25s ease !important;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--primary-color), 0 0 12px rgba(13, 148, 136, 0.15) !important;
+}
+
+/* 导航项按压反馈 */
+.nav-item {
+  transition: all 0.2s var(--ease-out-expo) !important;
+}
+
+.nav-item:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+/* 链接水润下划线 */
+a {
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:active {
+  opacity: 0.7;
+}
+
+/* 全局滚动条水润样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(13, 148, 136, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(13, 148, 136, 0.25);
+}
+
+/* ========== 全局动画 ========== */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(13, 148, 136, 0); }
 }

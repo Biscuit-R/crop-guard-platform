@@ -103,12 +103,12 @@ onMounted(async () => {
   align-items: center;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s ease;
 }
 
 .user-dropdown:hover {
-  background-color: #f3f4f6;
+  background-color: var(--primary-light);
 }
 
 .user-avatar {

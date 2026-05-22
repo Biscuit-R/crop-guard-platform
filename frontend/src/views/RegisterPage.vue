@@ -184,16 +184,16 @@ const handleRegister = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 50%, #d1fae5 100%);
+  background: var(--bg-color);
 }
 
 .register-card {
   width: 100%;
   max-width: 420px;
   padding: 40px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
 }
 
 .register-header {
@@ -205,8 +205,8 @@ const handleRegister = () => {
   width: 60px;
   height: 60px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
-  border-radius: 12px;
+  background: #0d9488;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,15 +248,17 @@ const handleRegister = () => {
 .register-btn {
   width: 100%;
   height: 44px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 15px;
   font-weight: 500;
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  background: #0d9488;
   border-color: #0d9488;
+  transition: background 0.2s ease;
 }
 
 .register-btn:hover {
-  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  background: #0f766e;
+  border-color: #0f766e;
 }
 
 .login-link {

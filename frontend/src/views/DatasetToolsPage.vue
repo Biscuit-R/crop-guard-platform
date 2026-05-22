@@ -387,15 +387,15 @@ const handleReset = () => {
 }
 
 .info-icon.voc {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #f59e0b;
 }
 
 .info-icon.coco {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: #3b82f6;
 }
 
 .info-icon.csv {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: #10b981;
 }
 
 .info-text h4 {

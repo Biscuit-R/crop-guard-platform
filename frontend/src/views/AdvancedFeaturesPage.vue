@@ -171,27 +171,27 @@ const navigateTo = (path) => {
 }
 
 .feature-icon.dataset {
-  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  background: #0d9488;
 }
 
 .feature-icon.training {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: #3b82f6;
 }
 
 .feature-icon.batch {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: #8b5cf6;
 }
 
 .feature-icon.export {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #f59e0b;
 }
 
 .feature-icon.api {
-  background: linear-gradient(135deg, #ec4899, #db2777);
+  background: #ec4899;
 }
 
 .feature-icon.plugin {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  background: #6366f1;
 }
 
 .feature-title {

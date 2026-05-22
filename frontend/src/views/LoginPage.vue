@@ -1,52 +1,62 @@
 <template>
   <div class="login-container">
-    <div class="login-left">
-      <div class="login-card">
+    <div class="login-card">
+      <div class="card-top">
         <div class="login-header">
           <div class="logo-icon">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 20h10"/>
-              <path d="M12 20v-8"/>
-              <path d="M12 12c-3-3-6-2-7 1 3 0 5-1 7-1"/>
-              <path d="M12 12c3-3 6-2 7 1-3 0-5-1-7-1"/>
-              <path d="M12 8c-2-4-5-4-6-1"/>
-              <path d="M12 8c2-4 5-4 6-1"/>
+            <svg viewBox="0 0 32 32" width="38" height="38" fill="none">
+              <path d="M16 3C10 3 5 8 5 14c0 4 2 7.5 5 10v2c0 .6.4 1 1 1h10c.6 0 1-.4 1-1v-2c3-2.5 5-6 5-10 0-6-5-11-11-11z" fill="rgba(255,255,255,0.15)" stroke="#ffffff" stroke-width="1.5"/>
+              <path d="M16 10c-1.5-3-4-4-5.5-2.5 2.5 0 4.2-.8 5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M16 10c1.5-3 4-4 5.5-2.5-2.5 0-4.2-.8-5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M16 14c-2-2.5-4.5-2.5-5.5-1 2 0 3.8-.5 5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M16 14c2-2.5 4.5-2.5 5.5-1-2 0-3.8-.5-5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M16 18v4" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
-          <h1 class="login-title">农作物病虫害检测平台</h1>
-          <p class="login-subtitle">智能识别 · 精准防护</p>
+          <div class="logo-text">
+            <h1 class="login-title">Crop Guard</h1>
+            <p class="login-subtitle">农作物病虫害智能检测平台</p>
+          </div>
         </div>
+      </div>
 
+      <div class="card-middle">
         <el-form
           ref="loginFormRef"
           :model="loginForm"
           :rules="loginRules"
           class="login-form"
         >
-          <el-form-item prop="username">
-            <el-input
-              v-model="loginForm.username"
-              placeholder="请输入用户名"
-              size="large"
-            >
-              <template #prefix>
-                <el-icon><User /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+          <div class="input-group">
+            <label class="input-label">用户名</label>
+            <el-form-item prop="username">
+              <el-input
+                v-model="loginForm.username"
+                placeholder="请输入用户名"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><User /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+          </div>
 
-          <el-form-item prop="password">
-            <el-input
-              v-model="loginForm.password"
-              type="password"
-              placeholder="请输入密码"
-              size="large"
-            >
-              <template #prefix>
-                <el-icon><Lock /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
+          <div class="input-group">
+            <label class="input-label">密码</label>
+            <el-form-item prop="password">
+              <el-input
+                v-model="loginForm.password"
+                type="password"
+                placeholder="请输入密码"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Lock /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+          </div>
 
           <el-form-item class="form-actions">
             <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
@@ -58,19 +68,12 @@
             </el-button>
           </el-form-item>
         </el-form>
+      </div>
 
+      <div class="card-bottom">
         <div class="register-link">
           <span>还没有账号？</span>
           <router-link to="/register">立即注册</router-link>
-        </div>
-      </div>
-    </div>
-
-    <div class="login-right">
-      <div class="overlay">
-        <div class="brand-text">
-          <h2>守护农作物健康</h2>
-          <p>基于深度学习的智能病虫害检测系统</p>
         </div>
       </div>
     </div>
@@ -134,75 +137,169 @@ const handleLogin = () => {
 .login-container {
   min-height: 100vh;
   display: flex;
-}
-
-.login-left {
-  width: 35%;
-  min-width: 400px;
-  flex-shrink: 0;
-  display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: url('/login-bg.jpg') center/cover no-repeat;
   padding: 40px;
 }
 
 .login-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 360px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.28),
+    0 12px 32px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: card-entrance 0.6s var(--ease-out-expo) both;
+  position: relative;
+}
+
+@keyframes card-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-top {
+  padding: 40px 32px 24px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.card-middle {
+  padding: 20px 32px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.card-bottom {
+  padding: 16px 32px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .login-header {
-  text-align: center;
-  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .logo-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  background: #0d9488;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+  flex-shrink: 0;
+}
+
+.logo-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .login-title {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
   color: #1f2937;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
 }
 
 .login-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   color: #6b7280;
 }
 
 .login-form {
-  margin-bottom: 24px;
+  margin-bottom: 0;
+}
+
+.input-group {
+  margin-bottom: 4px;
+}
+
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
 }
 
 .form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .login-btn {
   width: 100%;
-  height: 44px;
-  border-radius: 8px;
+  height: 46px;
+  border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  font-weight: 600;
+  background: #0d9488;
   border-color: #0d9488;
+  transition: all 0.2s var(--ease-out-expo);
+  letter-spacing: 0.04em;
+  position: relative;
+  overflow: hidden;
 }
 
 .login-btn:hover {
-  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  background: #0f766e;
+  border-color: #0f766e;
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+  transform: translateY(-1px);
+}
+
+.login-btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+  filter: brightness(0.95);
+}
+
+.login-card :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #e5e7eb;
+  transition: all 0.25s var(--ease-out-expo) !important;
+}
+
+.login-card :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #d1d5db;
+}
+
+.login-card :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #0d9488, 0 0 16px rgba(13, 148, 136, 0.12) !important;
 }
 
 .register-link {
@@ -215,41 +312,10 @@ const handleLogin = () => {
   color: #0d9488;
   margin-left: 4px;
   cursor: pointer;
+  font-weight: 500;
 }
 
 .register-link a:hover {
   text-decoration: underline;
-}
-
-.login-right {
-  flex: 1;
-  background: url('/login-bg.jpg') center/cover no-repeat;
-  position: relative;
-}
-
-.overlay {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.brand-text {
-  text-align: center;
-  color: #ffffff;
-}
-
-.brand-text h2 {
-  font-size: 36px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.brand-text p {
-  font-size: 16px;
-  opacity: 0.9;
 }
 </style>

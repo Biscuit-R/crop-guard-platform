@@ -3,17 +3,17 @@
     <template v-if="isLandscape">
       <div class="logo-section">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 20h10"/>
-            <path d="M12 20v-8"/>
-            <path d="M12 12c-3-3-6-2-7 1 3 0 5-1 7-1"/>
-            <path d="M12 12c3-3 6-2 7 1-3 0-5-1-7-1"/>
-            <path d="M12 8c-2-4-5-4-6-1"/>
-            <path d="M12 8c2-4 5-4 6-1"/>
+          <svg viewBox="0 0 32 32" width="20" height="20" fill="none">
+            <path d="M16 3C10 3 5 8 5 14c0 4 2 7.5 5 10v2c0 .6.4 1 1 1h10c.6 0 1-.4 1-1v-2c3-2.5 5-6 5-10 0-6-5-11-11-11z" fill="rgba(255,255,255,0.15)" stroke="#ffffff" stroke-width="1.5"/>
+            <path d="M16 10c-1.5-3-4-4-5.5-2.5 2.5 0 4.2-.8 5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M16 10c1.5-3 4-4 5.5-2.5-2.5 0-4.2-.8-5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M16 14c-2-2.5-4.5-2.5-5.5-1 2 0 3.8-.5 5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M16 14c2-2.5 4.5-2.5 5.5-1-2 0-3.8-.5-5.5-.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M16 18v4" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="logo-text">
-          <div class="logo-title">病虫害检测平台</div>
+          <div class="logo-title">Crop Guard</div>
         </div>
       </div>
       <div class="nav-menu">
@@ -114,15 +114,20 @@ const handleMenuClick = (item) => {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #0d9488;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
+  margin-right: 10px;
   flex-shrink: 0;
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.logo-icon:hover {
+  transform: scale(1.08) rotate(-3deg);
 }
 
 .logo-text {
@@ -146,16 +151,23 @@ const handleMenuClick = (item) => {
 .vertical .nav-item {
   display: flex;
   align-items: center;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
   margin-bottom: 2px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s var(--ease-out-expo);
   border-left: 3px solid transparent;
+  position: relative;
 }
 
 .vertical .nav-item:hover {
   background-color: var(--primary-light);
+  transform: translateX(2px);
+}
+
+.vertical .nav-item:active {
+  transform: scale(0.97);
+  opacity: 0.85;
 }
 
 .vertical .nav-item.active {
@@ -181,12 +193,17 @@ const handleMenuClick = (item) => {
   align-items: center;
   padding: 8px 16px;
   cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 8px;
+  transition: all 0.25s var(--ease-out-expo);
+  border-radius: 10px;
 }
 
 .horizontal .nav-item:hover {
   background-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.horizontal .nav-item:active {
+  transform: scale(0.95);
 }
 
 .horizontal .nav-item.active {

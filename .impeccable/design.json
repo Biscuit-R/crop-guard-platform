@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-22T12:00:00Z",
+  "title": "Design System: Crop Guard Platform",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "青绿",
+        "canonical": "#0d9488",
+        "tonalRamp": ["#042f2e", "#064e3b", "#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4", "#ccfbf1", "#f0fdfa"]
+      },
+      "primary-deep": {
+        "role": "primary",
+        "displayName": "深青绿",
+        "canonical": "#0f766e",
+        "tonalRamp": ["#042f2e", "#064e3b", "#0f766e", "#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4", "#ccfbf1"]
+      },
+      "primary-light": {
+        "role": "primary",
+        "displayName": "青绿薄纱",
+        "canonical": "#ccfbf1",
+        "tonalRamp": ["#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4", "#ccfbf1", "#e6fef9", "#f0fdfa", "#f5fffe"]
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "新绿",
+        "canonical": "#22c55e",
+        "tonalRamp": ["#052e16", "#14532d", "#166534", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#dcfce7"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "墨灰",
+        "canonical": "#1f2937",
+        "tonalRamp": ["#030712", "#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "雾灰",
+        "canonical": "#6b7280",
+        "tonalRamp": ["#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "银线",
+        "canonical": "#e5e7eb"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "纯白",
+        "canonical": "#ffffff"
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "晨雾",
+        "canonical": "#f0fdfa"
+      },
+      "background-muted": {
+        "role": "neutral",
+        "displayName": "薄雾灰",
+        "canonical": "#f9fafb"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "页面标题、登录欢迎语，仅用于一级标题。" },
+      "title": { "displayName": "Title", "purpose": "卡片标题、区块标题、表单分组标题。" },
+      "body": { "displayName": "Body", "purpose": "正文、表单标签、数据展示。" },
+      "label": { "displayName": "Label", "purpose": "小标签、状态文字、辅助说明。" }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 1px 3px rgba(0, 0, 0, 0.06)", "purpose": "卡片、弹窗、下拉菜单的默认阴影。" },
+      { "name": "hover", "value": "0 4px 12px rgba(0, 0, 0, 0.08)", "purpose": "可交互卡片的悬停态。" },
+      { "name": "modal", "value": "0 8px 24px rgba(0, 0, 0, 0.12)", "purpose": "模态弹窗、浮层。" }
+    ],
+    "motion": [
+      { "name": "standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "标准 transition，0.2s。" },
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "进入动画，指数缓出。" }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" },
+      { "name": "tablet", "value": "900px" },
+      { "name": "desktop", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "主操作按钮，用于登录、检测、保存等关键操作。",
+      "html": "<button class=\"ds-btn-primary\">开始检测</button>",
+      "css": ".ds-btn-primary { background: #0d9488; color: #ffffff; padding: 10px 24px; border-radius: 10px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s ease, box-shadow 0.2s ease; font-family: Avenir, Helvetica, Arial, sans-serif; } .ds-btn-primary:hover { background: #0f766e; } .ds-btn-primary:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; } .ds-btn-primary:active { background: #0f766e; transform: scale(0.98); } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "次要操作按钮，透明背景，hover 时显示浅色底。",
+      "html": "<button class=\"ds-btn-ghost\">取消</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #1f2937; padding: 10px 24px; border-radius: 10px; border: 1px solid #e5e7eb; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-family: Avenir, Helvetica, Arial, sans-serif; } .ds-btn-ghost:hover { background: #ccfbf1; border-color: #0d9488; color: #0d9488; } .ds-btn-ghost:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "标准文本输入框，用于表单、搜索等。",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"请输入...\" />",
+      "css": ".ds-input { background: #ffffff; color: #1f2937; padding: 10px 14px; border-radius: 10px; border: 1px solid #e5e7eb; font-size: 14px; font-family: Avenir, Helvetica, Arial, sans-serif; transition: border-color 0.2s ease, box-shadow 0.2s ease; outline: none; width: 100%; box-sizing: border-box; } .ds-input:hover { border-color: #d1d5db; } .ds-input:focus { border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); } .ds-input::placeholder { color: #9ca3af; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "内容卡片，用于数据展示、功能区块。",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">检测结果</div><div class=\"ds-card-body\">识别到 3 个病虫害目标</div></div>",
+      "css": ".ds-card { background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); transition: box-shadow 0.2s ease; } .ds-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); } .ds-card-title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 12px; font-family: Avenir, Helvetica, Arial, sans-serif; } .ds-card-body { font-size: 14px; color: #6b7280; line-height: 1.6; font-family: Avenir, Helvetica, Arial, sans-serif; }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "侧边栏/底部导航项。",
+      "html": "<div class=\"ds-nav-item ds-nav-active\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M7 20h10\"/><path d=\"M12 20v-8\"/><path d=\"M12 12c-3-3-6-2-7 1 3 0 5-1 7-1\"/><path d=\"M12 12c3-3 6-2 7 1-3 0-5-1-7-1\"/></svg><span class=\"ds-nav-text\">病虫害检测</span></div>",
+      "css": ".ds-nav-item { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border-left: 3px solid transparent; color: #6b7280; font-family: Avenir, Helvetica, Arial, sans-serif; font-size: 13px; gap: 10px; } .ds-nav-item:hover { background: #ccfbf1; } .ds-nav-active { background: #ccfbf1; border-left-color: #0d9488; color: #0d9488; } .ds-nav-active svg { stroke: #0d9488; }"
+    },
+    {
+      "name": "Tag / Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "标签组件，用于类别、状态标记。",
+      "html": "<span class=\"ds-tag\">真菌病害</span>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; background: #ccfbf1; color: #0d9488; font-size: 12px; font-weight: 500; font-family: Avenir, Helvetica, Arial, sans-serif; letter-spacing: 0.02em; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "田间晨露",
+    "overview": "清晨的田野，露珠挂在叶尖，空气清新而温和。这个平台应该给人同样的感受：干净、清新、让人安心。不追求炫酷的技术感，不堆砌华丽的装饰，而是像一个可靠的农技伙伴，用温暖而专业的方式帮助用户完成检测任务。\n\n系统明确拒绝四类反面参考：极客暗黑风格（黑底霓虹、过度动效）、儿童科普风格（卡通化、配色幼稚）、传统农业系统（过时表格堆砌）、SaaS 模板风格（渐变泛滥、卡片套卡片）。",
+    "keyCharacteristics": [
+      "清新自然的色彩：以青绿为主调，搭配温暖的中性色",
+      "圆润柔和的形态：大圆角、柔和阴影，避免尖锐和生硬",
+      "克制的信息密度：留白充足，信息层次分明",
+      "一致的组件语言：全平台统一的按钮、表单、卡片样式"
+    ],
+    "rules": [
+      { "name": "露珠规则", "body": "主色在任意页面上的面积占比不超过 15%。它的稀缺性赋予它信号价值。", "section": "colors" },
+      { "name": "暖灰规则", "body": "所有中性色都微微偏向暖色调。不使用纯灰或冷灰。", "section": "colors" },
+      { "name": "克制字号规则", "body": "不使用超过 28px 的字号。工具界面不需要杂志式的大标题。", "section": "typography" },
+      { "name": "安静规则", "body": "阴影永远是背景角色，不是装饰。如果一个阴影让人第一眼注意到，那它太重了。", "section": "elevation" }
+    ],
+    "dos": [
+      "使用青绿 (#0d9488) 作为唯一的主色调",
+      "使用圆角 10-16px 的组件形态",
+      "保持充足的留白，卡片间距至少 16px",
+      "使用 0.2s ease 的 transition 作为标准交互反馈速度",
+      "在深色文本上确保对比度达到 WCAG AA 标准",
+      "使用晨雾 (#f0fdfa) 作为页面背景"
+    ],
+    "donts": [
+      "使用极客暗黑风格（黑底霓虹、过度动效）",
+      "使用儿童科普风格（卡通化、配色幼稚）",
+      "使用传统农业系统风格（过时表格堆砌）",
+      "使用 SaaS 模板风格（渐变泛滥、卡片套卡片）",
+      "在组件上使用超过 3px 的边框作为彩色装饰条",
+      "使用渐变文字 (background-clip: text)",
+      "使用毛玻璃效果作为默认装饰",
+      "让主色占据页面超过 15% 的面积",
+      "使用超过 28px 的字号",
+      "使用重阴影让元素浮起来"
+    ]
+  }
+}
