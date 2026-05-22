@@ -326,7 +326,7 @@ const handleReset = () => {
 
 <style scoped>
 .dataset-tools-page {
-  padding: 0;
+  max-width: 1040px; margin: 0 auto; padding: 0;
 }
 
 .page-header {

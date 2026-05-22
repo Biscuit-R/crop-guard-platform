@@ -109,7 +109,7 @@ const navigateTo = (path) => {
 
 <style scoped>
 .advanced-features-page {
-  padding: 0;
+  max-width: 1040px; margin: 0 auto; padding: 0;
 }
 
 .page-header {

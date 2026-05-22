@@ -138,7 +138,7 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .dashboard-page {
-  width: 100%;
+  width: 100%; max-width: 1040px; margin: 0 auto;
 
   .page-header {
     margin-bottom: 24px;
