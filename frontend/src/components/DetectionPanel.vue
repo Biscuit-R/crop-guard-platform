@@ -56,26 +56,27 @@ defineEmits(["redetect"]);
 </script>
 
 <style scoped>
-.right-panel { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.right-panel { width: 100%; display: flex; flex-direction: column; gap: 10px; }
 .cards-row { display: flex; gap: 12px; }
 .cards-row .result-card { flex: 1; min-width: 0; }
 
 .result-card { background-color: #ffffff; border-radius: 12px; padding: 14px; }
-.card-header { display: flex; align-items: center; margin-bottom: 12px; }
+.card-header { display: flex; align-items: center; margin-bottom: 10px; }
 .card-header .el-icon { font-size: 15px; color: var(--primary-color); margin-right: 6px; }
 .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 24px 0; }
-.empty-icon { font-size: 36px; color: var(--success-color); margin-bottom: 8px; }
+.empty-state { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+.empty-icon { font-size: 28px; color: var(--success-color); margin-bottom: 6px; }
 .empty-text { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
 .empty-desc { font-size: 12px; color: var(--text-secondary); }
 
-.detection-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
-.detection-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background-color: #f9fafb; border-radius: 6px; }
+.detection-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
+.detection-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background-color: #f9fafb; border-radius: 6px; }
 .item-name { font-size: 13px; color: var(--text-primary); }
 .item-confidence { font-size: 12px; font-weight: 500; color: var(--primary-color); }
 
 .diagnosis-content { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.diagnosis-content p { margin: 0; }
 
 .action-buttons { display: flex; gap: 8px; }
 .btn-secondary { flex: 1; border-radius: 8px; }

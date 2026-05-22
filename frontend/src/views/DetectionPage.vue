@@ -460,7 +460,7 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 </script>
 
 <style scoped>
-.detection-page { width: 100%; max-width: 960px; margin: 0 auto; }
+.detection-page { width: 100%; max-width: 1040px; margin: 0 auto; }
 
 /* === 页头 === */
 .page-header { margin-bottom: 20px; }
@@ -474,7 +474,7 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 }
 
 .controls-sidebar {
-  width: 170px;
+  width: 200px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -490,6 +490,7 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 
 .result-layout {
   display: flex; flex-direction: column; gap: 16px;
+  min-height: 320px;
 }
 
 .result-left {
@@ -549,7 +550,7 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .model-info-item:last-child { border-bottom: none; }
 .model-info-label { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
 .model-info-value { font-size: 12px; font-weight: 500; color: var(--text-primary); text-align: right; margin-left: 8px; }
-.model-info-value.model-path { font-size: 11px; word-break: break-all; max-width: 120px; }
+.model-info-value.model-path { font-size: 11px; word-break: break-all; }
 
 /* === 上传区域 === */
 .upload-section { flex: 1; display: flex; }
