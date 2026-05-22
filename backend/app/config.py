@@ -1,5 +1,7 @@
 import logging
+from pathlib import Path
 from pydantic_settings import BaseSettings
+from app.utils.paths import Paths
 
 logger = logging.getLogger(__name__)
 
@@ -12,12 +14,12 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8081
 
-    STATIC_DIR: str = "static"
-    UPLOAD_DIR: str = "static/uploads"
-    RESULT_DIR: str = "static/results"
+    STATIC_DIR: str = str(Paths.static())
+    UPLOAD_DIR: str = str(Paths.uploads())
+    RESULT_DIR: str = str(Paths.results())
 
-    YOLO_MODEL_PATH: str = "models/yolo11n.pt"
-    MODEL_DIR: str = "models"
+    YOLO_MODEL_PATH: str = str(Paths.yolo_model())
+    MODEL_DIR: str = str(Paths.models_dir())
     CONFIDENCE_THRESHOLD: float = 0.5
     IOU_THRESHOLD: float = 0.45
 

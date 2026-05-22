@@ -11,7 +11,7 @@ from app.api.auth import router as auth_router
 from app.api.history import router as history_router
 from app.api.dashboard import router as dashboard_router
 from app.api.dataset import router as dataset_router
-from app.utils.file_utils import ensure_directories
+from app.utils.paths import Paths
 
 import app.models.db_models  # noqa: F401
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    ensure_directories()
+    Paths.init_all_dirs()
     Base.metadata.create_all(bind=engine)
 
     from app.services.detection_service import detection_service

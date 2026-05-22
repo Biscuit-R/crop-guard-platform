@@ -11,9 +11,9 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 
 
 def ensure_directories():
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    os.makedirs(settings.RESULT_DIR, exist_ok=True)
-    os.makedirs(settings.STATIC_DIR, exist_ok=True)
+    """保留兼容性，实际由 Paths.init_all_dirs() 处理"""
+    from app.utils.paths import Paths
+    Paths.init_all_dirs()
 
 
 async def save_upload_file(file: UploadFile, directory: str) -> str:
@@ -35,5 +35,16 @@ async def save_upload_file(file: UploadFile, directory: str) -> str:
 
 
 def get_file_url(filename: str, directory: str) -> str:
-    host = os.environ.get("API_HOST", f"localhost:{settings.PORT}")
-    return f"http://{host}/{directory}/{filename}"
+    """生成文件的可访问 URL 路径（相对于 /static 挂载点）"""
+    # 从绝对路径中提取 static 之后的相对部分
+    # 例如 E:\...\backend\static\uploads → /static/uploads
+    static_dir = settings.STATIC_DIR.replace("\\", "/")
+    dir_normalized = directory.replace("\\", "/")
+
+    if dir_normalized.startswith(static_dir):
+        relative = dir_normalized[len(static_dir):].lstrip("/")
+        return f"/static/{relative}/{filename}"
+
+    # 回退：直接用目录名
+    dir_name = os.path.basename(directory)
+    return f"/static/{dir_name}/{filename}"

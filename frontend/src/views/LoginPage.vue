@@ -1,59 +1,77 @@
 <template>
   <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <div class="logo-icon">
-          <el-icon :size="40" color="#ffffff"><Monitor /></el-icon>
+    <div class="login-left">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 20h10"/>
+              <path d="M12 20v-8"/>
+              <path d="M12 12c-3-3-6-2-7 1 3 0 5-1 7-1"/>
+              <path d="M12 12c3-3 6-2 7 1-3 0-5-1-7-1"/>
+              <path d="M12 8c-2-4-5-4-6-1"/>
+              <path d="M12 8c2-4 5-4 6-1"/>
+            </svg>
+          </div>
+          <h1 class="login-title">农作物病虫害检测平台</h1>
+          <p class="login-subtitle">智能识别 · 精准防护</p>
         </div>
-        <h1 class="login-title">农作物病虫害检测平台</h1>
-        <p class="login-subtitle">智能识别 · 精准防护</p>
+
+        <el-form
+          ref="loginFormRef"
+          :model="loginForm"
+          :rules="loginRules"
+          class="login-form"
+        >
+          <el-form-item prop="username">
+            <el-input
+              v-model="loginForm.username"
+              placeholder="请输入用户名"
+              size="large"
+            >
+              <template #prefix>
+                <el-icon><User /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              placeholder="请输入密码"
+              size="large"
+            >
+              <template #prefix>
+                <el-icon><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item class="form-actions">
+            <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="handleLogin">
+              登录
+            </el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="register-link">
+          <span>还没有账号？</span>
+          <router-link to="/register">立即注册</router-link>
+        </div>
       </div>
+    </div>
 
-      <el-form
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        class="login-form"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
-            size="large"
-          >
-            <template #prefix>
-              <el-icon><User /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item prop="password">
-          <el-input
-            v-model="loginForm.password"
-            type="password"
-            placeholder="请输入密码"
-            size="large"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item class="form-actions">
-          <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="handleLogin">
-            登录
-          </el-button>
-        </el-form-item>
-      </el-form>
-
-      <div class="register-link">
-        <span>还没有账号？</span>
-        <router-link to="/register">立即注册</router-link>
+    <div class="login-right">
+      <div class="overlay">
+        <div class="brand-text">
+          <h2>守护农作物健康</h2>
+          <p>基于深度学习的智能病虫害检测系统</p>
+        </div>
       </div>
     </div>
   </div>
@@ -61,7 +79,7 @@
 
 <script setup>
 import { ref, reactive } from "vue";
-import { Monitor, User, Lock } from "@element-plus/icons-vue";
+import { User, Lock } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "../stores/user";
@@ -116,18 +134,22 @@ const handleLogin = () => {
 .login-container {
   min-height: 100vh;
   display: flex;
+}
+
+.login-left {
+  width: 35%;
+  min-width: 400px;
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 50%, #d1fae5 100%);
+  background: #ffffff;
+  padding: 40px;
 }
 
 .login-card {
   width: 100%;
-  max-width: 400px;
-  padding: 40px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 380px;
 }
 
 .login-header {
@@ -197,5 +219,37 @@ const handleLogin = () => {
 
 .register-link a:hover {
   text-decoration: underline;
+}
+
+.login-right {
+  flex: 1;
+  background: url('/login-bg.jpg') center/cover no-repeat;
+  position: relative;
+}
+
+.overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.brand-text {
+  text-align: center;
+  color: #ffffff;
+}
+
+.brand-text h2 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.brand-text p {
+  font-size: 16px;
+  opacity: 0.9;
 }
 </style>

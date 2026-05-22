@@ -1,19 +1,21 @@
 <template>
   <div class="detection-page">
     <div class="page-header">
-      <h1 class="page-title">上传农作物图片，快速识别病虫害</h1>
-      <p class="page-subtitle">支持叶斑病 / 锈病 / 白粉病 / 蚜虫 / 毛虫等多种病虫害检测</p>
-    </div>
-
-    <div class="model-selector">
-      <el-select v-model="selectedModel" style="width: 200px" @change="handleModelSwitch" :loading="modelsLoading">
-        <el-option
-          v-for="m in availableModels"
-          :key="m.filename"
-          :label="`${m.version} (${m.size_mb}MB)`"
-          :value="m.filename"
-        />
-      </el-select>
+      <div class="header-text">
+        <h1 class="page-title">上传农作物图片，快速识别病虫害</h1>
+        <p class="page-subtitle">支持叶斑病 / 锈病 / 白粉病 / 蚜虫 / 毛虫等多种病虫害检测</p>
+      </div>
+      <div class="model-selector">
+        <span class="model-label">检测模型</span>
+        <el-select v-model="selectedModel" style="width: 200px" @change="handleModelSwitch" :loading="modelsLoading">
+          <el-option
+            v-for="m in availableModels"
+            :key="m.filename"
+            :label="`${m.version} (${m.size_mb}MB)`"
+            :value="m.filename"
+          />
+        </el-select>
+      </div>
     </div>
 
     <FunctionTabs
@@ -148,10 +150,49 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 </script>
 
 <style scoped>
-.detection-page { width: 100%; position: relative; }
-.page-header { margin-bottom: 32px; }
-.page-title { font-size: 28px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-.page-subtitle { font-size: 14px; color: var(--text-secondary); }
-.model-selector { position: absolute; top: 0; right: 0; z-index: 10; }
-.main-content { display: flex; gap: 24px; }
+.detection-page { width: 100%; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.model-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.model-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.main-content {
+  display: flex;
+  gap: 24px;
+}
 </style>
