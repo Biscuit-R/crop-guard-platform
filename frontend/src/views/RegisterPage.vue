@@ -207,7 +207,7 @@ const handleRegister = () => {
   width: 60px;
   height: 60px;
   margin: 0 auto 16px;
-  background: #0d9488;
+  background: #b45309;
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -239,7 +239,7 @@ const handleRegister = () => {
 }
 
 .terms-link {
-  color: #0d9488;
+  color: #b45309;
   margin: 0 4px;
 }
 
@@ -253,14 +253,14 @@ const handleRegister = () => {
   border-radius: 10px;
   font-size: 15px;
   font-weight: 500;
-  background: #0d9488;
-  border-color: #0d9488;
+  background: #b45309;
+  border-color: #b45309;
   transition: background 0.2s ease;
 }
 
 .register-btn:hover {
-  background: #0f766e;
-  border-color: #0f766e;
+  background: #92400e;
+  border-color: #92400e;
 }
 
 .login-link {
@@ -270,7 +270,7 @@ const handleRegister = () => {
 }
 
 .login-link a {
-  color: #0d9488;
+  color: #b45309;
   margin-left: 4px;
 }
 

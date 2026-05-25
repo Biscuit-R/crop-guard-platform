@@ -10,6 +10,18 @@
 
     <!-- 功能卡片网格 -->
     <div class="features-grid">
+      <!-- 病虫害图鉴 -->
+      <el-card class="feature-card" shadow="hover" @click="navigateTo('/guide')">
+        <div class="feature-icon batch">
+          <el-icon :size="32"><Collection /></el-icon>
+        </div>
+        <h3 class="feature-title">病虫害图鉴</h3>
+        <p class="feature-desc">浏览常见农作物病虫害的详细资料和防治方法</p>
+        <div class="feature-tags">
+          <el-tag size="small" type="success">已上线</el-tag>
+        </div>
+      </el-card>
+
       <!-- 数据集转化 -->
       <el-card class="feature-card" shadow="hover" @click="navigateTo('/tools/dataset')">
         <div class="feature-icon dataset">
@@ -32,18 +44,6 @@
         </div>
         <h3 class="feature-title">模型训练</h3>
         <p class="feature-desc">在线配置训练参数，上传数据集进行模型微调训练</p>
-        <div class="feature-tags">
-          <el-tag size="small" type="warning">开发中</el-tag>
-        </div>
-      </el-card>
-
-      <!-- 批量检测（开发中） -->
-      <el-card class="feature-card disabled" shadow="hover">
-        <div class="feature-icon batch">
-          <el-icon :size="32"><Files /></el-icon>
-        </div>
-        <h3 class="feature-title">批量检测</h3>
-        <p class="feature-desc">一次性上传多张图片，批量进行病虫害检测并导出报告</p>
         <div class="feature-tags">
           <el-tag size="small" type="warning">开发中</el-tag>
         </div>
@@ -93,7 +93,7 @@ import { useRouter } from "vue-router";
 import {
   SetUp,
   Cpu,
-  Files,
+  Collection,
   Download,
   Connection,
   Grid,
@@ -180,7 +180,7 @@ const navigateTo = (path) => {
 }
 
 .feature-icon.dataset {
-  background: #0d9488;
+  background: #b45309;
 }
 
 .feature-icon.training {

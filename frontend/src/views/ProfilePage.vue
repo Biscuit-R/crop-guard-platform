@@ -24,7 +24,7 @@
 
       <div class="stats-cards">
         <div class="stat-card">
-          <div class="stat-icon" style="background: #0d9488">
+          <div class="stat-icon" style="background: #b45309">
             <el-icon :size="24" color="#ffffff"><Picture /></el-icon>
           </div>
           <div class="stat-info">
@@ -60,13 +60,26 @@
           </div>
         </div>
       </div>
+
+      <div class="quick-entries">
+        <div class="entry-card" @click="$router.push('/history')">
+          <div class="entry-icon" style="background: #8b5cf6">
+            <el-icon :size="24" color="#ffffff"><Clock /></el-icon>
+          </div>
+          <div class="entry-info">
+            <div class="entry-title">检测历史</div>
+            <div class="entry-desc">查看所有检测记录和结果</div>
+          </div>
+          <el-icon class="entry-arrow"><ArrowRight /></el-icon>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { reactive, onMounted } from "vue";
-import { Picture, Aim, CircleCheck, Calendar } from "@element-plus/icons-vue";
+import { Picture, Aim, CircleCheck, Calendar, Clock, ArrowRight } from "@element-plus/icons-vue";
 import { useUserStore } from "../stores/user";
 import { getDashboardStats } from "../api/dashboard";
 
@@ -130,7 +143,7 @@ onMounted(async () => {
       display: flex; align-items: center;
 
       .profile-avatar {
-        background: #0d9488; color: #fff; font-size: 32px; font-weight: 600; flex-shrink: 0;
+        background: #b45309; color: #fff; font-size: 32px; font-weight: 600; flex-shrink: 0;
       }
 
       .user-basic-info {
@@ -172,6 +185,34 @@ onMounted(async () => {
         .stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
         .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
       }
+    }
+  }
+
+  .quick-entries {
+    display: flex; flex-direction: column; gap: 12px;
+
+    .entry-card {
+      background-color: var(--surface); border-radius: var(--radius-lg); padding: 20px;
+      box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 16px;
+      cursor: pointer; transition: all 0.3s var(--ease-out-expo);
+      animation: fade-up 0.5s var(--ease-out-expo) both;
+      animation-delay: 0.25s;
+      &:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+      &:active { transform: scale(0.98); }
+
+      .entry-icon {
+        width: 48px; height: 48px; border-radius: var(--radius-md); display: flex;
+        align-items: center; justify-content: center; flex-shrink: 0;
+        transition: transform 0.3s var(--ease-spring);
+      }
+      &:hover .entry-icon { transform: scale(1.05); }
+
+      .entry-info {
+        flex: 1;
+        .entry-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .entry-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+      }
+      .entry-arrow { font-size: 18px; color: var(--text-secondary); }
     }
   }
 }

@@ -21,3 +21,11 @@ export function deleteHistory(id) {
     method: 'delete'
   })
 }
+
+export function batchDeleteHistory(ids) {
+  return request({
+    url: '/history/batch-delete',
+    method: 'post',
+    data: { ids }
+  })
+}

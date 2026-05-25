@@ -8,11 +8,177 @@ import threading
 from datetime import datetime, timezone
 from ultralytics import YOLO
 import cv2
-from app.config import settings
+import numpy as np
+from app.config import settings, MODEL_REGISTRY, CHINESE_CLASS_NAMES
 from app.models.schemas import DetectionBox, DetectionResult, VideoDetectionResult, ModelInfo, VersionHistoryItem
 from app.utils.file_utils import get_file_url
 
 logger = logging.getLogger(__name__)
+
+
+# ==================== 美化检测框绘制 ====================
+
+# 类别调色板（20色循环，HSV 均匀分布转 BGR）
+_PALETTE = [
+    (72, 209, 173),   # 暖绿
+    (50, 127, 233),   # 天蓝
+    (46, 199, 106),   # 草绿
+    (138, 87, 232),   # 紫罗兰
+    (34, 178, 229),   # 青蓝
+    (57, 199, 186),   # 青绿
+    (232, 110, 48),   # 暖橙
+    (131, 96, 232),   # 蓝紫
+    (217, 83, 79),    # 珊瑚红
+    (50, 142, 232),   # 宝蓝
+    (92, 184, 77),    # 浅绿
+    (227, 156, 37),   # 琥珀黄
+    (66, 133, 244),   # Google蓝
+    (120, 178, 52),   # 黄绿
+    (219, 68, 55),    # Google红
+    (244, 180, 0),    # 金黄
+    (171, 71, 188),   # 梅紫
+    (0, 172, 193),    # 深青
+    (255, 112, 67),   # 深橙
+    (124, 179, 66),   # 橄榄绿
+]
+
+
+def _get_color(class_id: int) -> tuple:
+    """根据类别 ID 返回一个 BGR 颜色"""
+    return _PALETTE[class_id % len(_PALETTE)]
+
+
+def _rounded_rect(img, pt1, pt2, color, radius=12, thickness=1):
+    """绘制圆角矩形边框"""
+    x1, y1 = pt1
+    x2, y2 = pt2
+    r = min(radius, (x2 - x1) // 2, (y2 - y1) // 2)
+    if r < 1:
+        cv2.rectangle(img, pt1, pt2, color, thickness)
+        return
+
+    # 四条边（不含圆角弧）
+    cv2.line(img, (x1 + r, y1), (x2 - r, y1), color, thickness)
+    cv2.line(img, (x1 + r, y2), (x2 - r, y2), color, thickness)
+    cv2.line(img, (x1, y1 + r), (x1, y2 - r), color, thickness)
+    cv2.line(img, (x2, y1 + r), (x2, y2 - r), color, thickness)
+
+    # 四段圆弧
+    cv2.ellipse(img, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, thickness)
+    cv2.ellipse(img, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, thickness)
+    cv2.ellipse(img, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, thickness)
+    cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
+
+
+def _fill_rounded_rect(img, pt1, pt2, color, radius=12, alpha=0.15):
+    """绘制半透明填充圆角矩形"""
+    x1, y1 = pt1
+    x2, y2 = pt2
+    r = min(radius, (x2 - x1) // 2, (y2 - y1) // 2)
+    if r < 1:
+        overlay = img.copy()
+        cv2.rectangle(overlay, pt1, pt2, color, -1)
+        cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+        return
+
+    overlay = img.copy()
+
+    # 填充主体区域
+    cv2.rectangle(overlay, (x1 + r, y1), (x2 - r, y2), color, -1)
+    cv2.rectangle(overlay, (x1, y1 + r), (x2, y2 - r), color, -1)
+
+    # 四个圆角填充
+    cv2.ellipse(overlay, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, -1)
+    cv2.ellipse(overlay, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, -1)
+    cv2.ellipse(overlay, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, -1)
+    cv2.ellipse(overlay, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, -1)
+
+    cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+
+
+def _draw_label(img, text, x, y, color, font_scale=0.45):
+    """绘制带圆角背景的标签"""
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    thickness = 1
+    (tw, th), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+
+    label_w = tw + 12
+    label_h = th + 8
+    lx1 = x
+    ly1 = y - label_h
+    lx2 = x + label_w
+    ly2 = y
+
+    # 背景填充（圆角矩形）
+    _fill_rounded_rect(img, (lx1, ly1), (lx2, ly2), color, radius=6, alpha=0.88)
+
+    # 边框
+    _rounded_rect(img, (lx1, ly1), (lx2, ly2), color, radius=6, thickness=1)
+
+    # 文字
+    text_x = lx1 + 6
+    text_y = ly2 - baseline - 3
+    cv2.putText(img, text, (text_x, text_y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+
+
+def draw_detections(image: np.ndarray, boxes: list, class_names: dict, cn_names: dict = None) -> np.ndarray:
+    """
+    在图片上绘制美化的检测框。
+
+    Args:
+        image: BGR 格式图片 (numpy array)
+        boxes: ultralytics Results.boxes 列表
+        class_names: {id: name} 字典
+        cn_names: {en_name: cn_name} 中文学名字典
+
+    Returns:
+        绘制后的图片副本
+    """
+    img = image.copy()
+    h, w = img.shape[:2]
+    # 根据图片大小自适应线宽和字号
+    line_w = max(2, int(min(h, w) / 300))
+    font_scale = max(0.35, min(0.6, min(h, w) / 1200))
+
+    for box in boxes:
+        x1, y1, x2, y2 = [int(v) for v in box.xyxy[0].tolist()]
+        confidence = float(box.conf[0])
+        class_id = int(box.cls[0])
+        en_name = class_names.get(class_id, f"class_{class_id}")
+        # 优先使用中文学名
+        display_name = cn_names.get(en_name, en_name) if cn_names else en_name
+        color = _get_color(class_id)
+
+        # 1. 半透明填充
+        _fill_rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, alpha=0.08)
+
+        # 2. 圆角边框
+        _rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, thickness=line_w)
+
+        # 3. 四角高亮装饰线（加粗角标效果）
+        corner_len = max(12, int(min(x2 - x1, y2 - y1) * 0.15))
+        thick = line_w + 1
+        # 左上
+        cv2.line(img, (x1, y1), (x1 + corner_len, y1), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x1, y1), (x1, y1 + corner_len), color, thick, cv2.LINE_AA)
+        # 右上
+        cv2.line(img, (x2, y1), (x2 - corner_len, y1), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x2, y1), (x2, y1 + corner_len), color, thick, cv2.LINE_AA)
+        # 左下
+        cv2.line(img, (x1, y2), (x1 + corner_len, y2), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x1, y2), (x1, y2 - corner_len), color, thick, cv2.LINE_AA)
+        # 右下
+        cv2.line(img, (x2, y2), (x2 - corner_len, y2), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x2, y2), (x2, y2 - corner_len), color, thick, cv2.LINE_AA)
+
+        # 4. 标签
+        label = f"{display_name} {confidence:.0%}"
+        label_y = y1 - 6
+        if label_y < 25:
+            label_y = y2 + 6
+        _draw_label(img, label, x1, label_y, color, font_scale=font_scale)
+
+    return img
 
 # 项目根目录
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -124,12 +290,15 @@ class DetectionService:
                 full_path = os.path.join(models_dir, f)
                 version = self._extract_version(full_path)
                 stat = os.stat(full_path)
+                reg = MODEL_REGISTRY.get(f, {})
                 models.append(ModelInfo(
                     filename=f,
                     version=version,
                     size_mb=round(stat.st_size / (1024 * 1024), 2),
                     modified_at=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
                     is_current=os.path.abspath(full_path) == current_abs,
+                    display_name=reg.get("display_name", version),
+                    description=reg.get("description", ""),
                 ))
 
         # 按修改时间降序
@@ -210,7 +379,8 @@ class DetectionService:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     confidence = float(box.conf[0])
                     class_id = int(box.cls[0])
-                    class_name = self.class_names.get(class_id, f"class_{class_id}")
+                    en_name = self.class_names.get(class_id, f"class_{class_id}")
+                    class_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
 
                     boxes.append(DetectionBox(
                         x1=x1, y1=y1, x2=x2, y2=y2,
@@ -222,7 +392,7 @@ class DetectionService:
             result_filename = f"result_{uuid.uuid4().hex}.jpg"
             result_path = os.path.join(settings.RESULT_DIR, result_filename)
 
-            annotated_image = results[0].plot()
+            annotated_image = draw_detections(results[0].orig_img, results[0].boxes, self.class_names, CHINESE_CLASS_NAMES)
             cv2.imwrite(result_path, annotated_image)
 
             detection_time = time.time() - start_time
@@ -285,14 +455,15 @@ class DetectionService:
                         verbose=False,
                     )
 
-                    annotated = results[0].plot()
+                    annotated = draw_detections(results[0].orig_img, results[0].boxes, self.class_names, CHINESE_CLASS_NAMES)
                     writer.write(annotated)
 
                     # 统计检测结果
                     for box in results[0].boxes:
                         class_id = int(box.cls[0])
-                        class_name = self.class_names.get(class_id, f"class_{class_id}")
-                        class_summary[class_name] = class_summary.get(class_name, 0) + 1
+                        en_name = self.class_names.get(class_id, f"class_{class_id}")
+                        cn_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
+                        class_summary[cn_name] = class_summary.get(cn_name, 0) + 1
                         total_objects += 1
 
                     # 保存关键帧（有检测目标的帧）

@@ -78,6 +78,11 @@ class Paths:
         return cls.static() / "result_videos"
 
     @classmethod
+    def forum_images(cls):
+        """讨论区图片目录"""
+        return cls.static() / "forum_images"
+
+    @classmethod
     def models_dir(cls):
         """模型文件目录"""
         return cls.backend() / "models"
@@ -85,7 +90,7 @@ class Paths:
     @classmethod
     def yolo_model(cls):
         """默认 YOLO 模型路径"""
-        return cls.models_dir() / "yolo11n.pt"
+        return cls.models_dir() / "best.pt"
 
     @classmethod
     def logs(cls):
@@ -117,6 +122,7 @@ class Paths:
             cls.results(),
             cls.videos(),
             cls.result_videos(),
+            cls.forum_images(),
             cls.models_dir(),
             cls.logs(),
             cls.temp(),

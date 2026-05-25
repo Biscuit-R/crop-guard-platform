@@ -8,7 +8,7 @@
         </el-button>
       </div>
       <h1 class="page-title">数据集工具</h1>
-      <p class="page-desc">通用数据集格式转化工具，支持 VOC、COCO、CSV 格式自动转化为 YOLO 训练格式</p>
+      <p class="page-desc">通用数据集格式转化工具，支持 XML、VOC、COCO、CSV 格式自动转化为 YOLO 训练格式</p>
     </div>
 
     <!-- 功能说明卡片 -->
@@ -21,10 +21,17 @@
       </template>
       <div class="info-content">
         <div class="info-item">
+          <div class="info-icon xml">XML</div>
+          <div class="info-text">
+            <h4>XML 标注格式</h4>
+            <p>适用于 LabelImg 标注的 XML 文件（图片与标注同目录）</p>
+          </div>
+        </div>
+        <div class="info-item">
           <div class="info-icon voc">VOC</div>
           <div class="info-text">
             <h4>Pascal VOC 格式</h4>
-            <p>适用于 LabelImg 标注工具生成的 XML 文件</p>
+            <p>适用于标准 VOC 目录结构（Annotations + JPEGImages）</p>
           </div>
         </div>
         <div class="info-item">
@@ -57,9 +64,13 @@
         <!-- 选择格式 -->
         <el-form-item label="输入格式" prop="format">
           <el-radio-group v-model="form.format">
+            <el-radio-button value="xml">
+              <span class="format-radio-icon">XML</span>
+              <span class="format-radio-desc">LabelImg 标注</span>
+            </el-radio-button>
             <el-radio-button value="voc">
               <span class="format-radio-icon">VOC</span>
-              <span class="format-radio-desc">XML 标注</span>
+              <span class="format-radio-desc">Pascal VOC</span>
             </el-radio-button>
             <el-radio-button value="coco">
               <span class="format-radio-icon">COCO</span>
@@ -187,6 +198,14 @@
       </template>
 
       <div class="structure-grid">
+        <div class="structure-item">
+          <h4>XML 格式输入</h4>
+          <pre class="tree">xml_data/
+├── img001.xml
+├── img001.jpg
+├── img002.xml
+└── img002.jpg</pre>
+        </div>
         <div class="structure-item">
           <h4>VOC 格式输入</h4>
           <pre class="tree">voc_data/
@@ -398,6 +417,10 @@ const handleReset = () => {
   font-size: 14px;
   color: white;
   flex-shrink: 0;
+}
+
+.info-icon.xml {
+  background: #8b5cf6;
 }
 
 .info-icon.voc {

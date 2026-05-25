@@ -76,7 +76,7 @@ const categoryConfig = {
   "真菌病害": { icon: Warning, color: "#f59e0b" },
   "细菌病害": { icon: FirstAidKit, color: "#ef4444" },
   "病毒病害": { icon: Opportunity, color: "#8b5cf6" },
-  "虫害": { icon: Sunny, color: "#0d9488" },
+  "虫害": { icon: Sunny, color: "#b45309" },
 };
 
 const fetchPests = async () => {
@@ -153,7 +153,7 @@ onMounted(fetchPests);
       .stat-icon {
         width: 50px; height: 50px; border-radius: 12px; display: flex;
         align-items: center; justify-content: center; color: white; font-size: 24px;
-        &.pest-icon { background: #0d9488; }
+        &.pest-icon { background: #b45309; }
         &.category-icon { background: #3b82f6; }
       }
       .stat-info {
@@ -194,7 +194,7 @@ onMounted(fetchPests);
         display: flex; flex-direction: column; gap: 10px;
         .pest-item {
           display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px;
-          background-color: #f0fdfa; border-radius: 8px; cursor: pointer;
+          background-color: #fef9ef; border-radius: 8px; cursor: pointer;
           transition: background-color 0.2s ease, transform 0.2s var(--ease-out-expo);
           animation: fade-in 0.6s var(--ease-out-expo) both;
           &:nth-child(1) { animation-delay: 0.4s; }
@@ -202,8 +202,8 @@ onMounted(fetchPests);
           &:nth-child(3) { animation-delay: 0.6s; }
           &:nth-child(4) { animation-delay: 0.7s; }
           &:nth-child(5) { animation-delay: 0.8s; }
-          &:hover { background-color: #ccfbf1; transform: translateX(4px); }
-          .pest-item-icon { color: #0d9488; margin-top: 2px; flex-shrink: 0; transition: transform 0.3s var(--ease-spring); }
+          &:hover { background-color: #fef3c7; transform: translateX(4px); }
+          .pest-item-icon { color: #b45309; margin-top: 2px; flex-shrink: 0; transition: transform 0.3s var(--ease-spring); }
           &:hover .pest-item-icon { transform: scale(1.2); }
           .pest-detail {
             display: flex; flex-direction: column;

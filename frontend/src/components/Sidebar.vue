@@ -19,8 +19,7 @@ import { useRouter, useRoute } from "vue-router";
 import {
   DataLine,
   Picture,
-  Clock,
-  Collection,
+  ChatLineSquare,
   Operation,
   User,
   UserFilled,
@@ -35,13 +34,12 @@ const allMenuItems = computed(() => {
   const items = [
     { name: "数据看板", icon: DataLine, path: "/dashboard" },
     { name: "病虫害检测", icon: Picture, path: "/detection" },
-    { name: "检测历史", icon: Clock, path: "/history" },
-    { name: "图鉴", icon: Collection, path: "/guide" },
+    { name: "讨论区", icon: ChatLineSquare, path: "/discussion" },
     { name: "高级功能", icon: Operation, path: "/tools" },
     { name: "我的", icon: User, path: "/profile" },
   ];
   if (userStore.isAdmin) {
-    items.splice(5, 0, { name: "用户管理", icon: UserFilled, path: "/admin" });
+    items.splice(4, 0, { name: "用户管理", icon: UserFilled, path: "/admin" });
   }
   return items;
 });

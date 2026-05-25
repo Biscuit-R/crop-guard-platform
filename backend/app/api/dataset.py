@@ -24,7 +24,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 @router.post("/convert")
 async def convert_dataset(
     file: UploadFile = File(..., description="数据集压缩包 (ZIP)"),
-    format: str = Form(..., description="输入格式: voc / coco / csv"),
+    format: str = Form(..., description="输入格式: xml / voc / coco / csv"),
     classes: Optional[str] = Form(None, description="类别列表（每行一个）"),
     current_user: User = Depends(get_current_user),
 ):
@@ -32,14 +32,15 @@ async def convert_dataset(
     上传数据集压缩包并转化为 YOLO 格式
 
     支持格式:
-    - **voc**: Pascal VOC (XML 标注)
+    - **xml**: XML 标注（LabelImg 扁平目录）
+    - **voc**: Pascal VOC (XML 标注，标准目录结构)
     - **coco**: Microsoft COCO (JSON 标注)
     - **csv**: CSV 格式
 
     返回转化后的 ZIP 压缩包下载链接
     """
-    if format not in ["voc", "coco", "csv"]:
-        raise HTTPException(status_code=400, detail="不支持的格式，请选择: voc / coco / csv")
+    if format not in ["xml", "voc", "coco", "csv"]:
+        raise HTTPException(status_code=400, detail="不支持的格式，请选择: xml / voc / coco / csv")
 
     # 验证文件类型
     if not file.filename.endswith(".zip"):
@@ -87,7 +88,11 @@ async def convert_dataset(
             shutil.rmtree(output_dir)
         os.makedirs(output_dir)
 
-        if format == "voc":
+        if format == "xml":
+            if not class_list:
+                raise HTTPException(status_code=400, detail="XML 格式需要提供类别列表")
+            converted = _convert_xml(dataset_dir, output_dir, class_list)
+        elif format == "voc":
             if not class_list:
                 raise HTTPException(status_code=400, detail="VOC 格式需要提供类别列表")
             converted = _convert_voc(dataset_dir, output_dir, class_list)
@@ -160,6 +165,84 @@ def _save_yolo_sample(img_path: str, yolo_lines: list, out_img_dir: str, out_lbl
     txt_filename = os.path.splitext(img_filename)[0] + ".txt"
     with open(os.path.join(out_lbl_dir, txt_filename), "w") as f:
         f.write("\n".join(yolo_lines) + "\n")
+
+
+def _convert_xml(dataset_dir: str, output_dir: str, class_list: list) -> int:
+    """转化 XML 格式（LabelImg 扁平目录：XML 和图片在同一目录）"""
+    import xml.etree.ElementTree as ET
+
+    class_map = {name: i for i, name in enumerate(class_list)}
+    img_extensions = {".jpg", ".jpeg", ".png", ".bmp"}
+
+    out_img_dir = os.path.join(output_dir, "images", "train")
+    out_lbl_dir = os.path.join(output_dir, "labels", "train")
+    os.makedirs(out_img_dir, exist_ok=True)
+    os.makedirs(out_lbl_dir, exist_ok=True)
+
+    converted = 0
+    for xml_file in Path(dataset_dir).glob("**/*.xml"):
+        try:
+            tree = ET.parse(xml_file)
+            root = tree.getroot()
+
+            size = root.find("size")
+            if size is None:
+                continue
+            w_elem = size.find("width")
+            h_elem = size.find("height")
+            if w_elem is None or h_elem is None:
+                continue
+            img_width = int(w_elem.text)
+            img_height = int(h_elem.text)
+
+            filename_elem = root.find("filename")
+            if filename_elem is None:
+                continue
+            filename = filename_elem.text
+
+            # 在 XML 同目录或 images/ 子目录查找图片
+            img_path = None
+            xml_dir = os.path.dirname(xml_file)
+            candidate = os.path.join(xml_dir, filename)
+            if os.path.exists(candidate):
+                img_path = candidate
+            else:
+                for ext in img_extensions:
+                    base = os.path.splitext(filename)[0]
+                    candidate = os.path.join(xml_dir, base + ext)
+                    if os.path.exists(candidate):
+                        img_path = candidate
+                        break
+
+            if not img_path:
+                continue
+
+            yolo_lines = []
+            for obj in root.findall("object"):
+                class_name = obj.find("name").text
+                if class_name not in class_map:
+                    continue
+
+                bbox = obj.find("bndbox")
+                xmin = float(bbox.find("xmin").text)
+                ymin = float(bbox.find("ymin").text)
+                xmax = float(bbox.find("xmax").text)
+                ymax = float(bbox.find("ymax").text)
+
+                x_center = ((xmin + xmax) / 2) / img_width
+                y_center = ((ymin + ymax) / 2) / img_height
+                width = (xmax - xmin) / img_width
+                height = (ymax - ymin) / img_height
+
+                yolo_lines.append(f"{class_map[class_name]} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
+
+            if yolo_lines:
+                _save_yolo_sample(img_path, yolo_lines, out_img_dir, out_lbl_dir)
+                converted += 1
+        except Exception:
+            continue
+
+    return converted
 
 
 def _convert_voc(dataset_dir: str, output_dir: str, class_list: list) -> int:

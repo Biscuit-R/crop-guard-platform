@@ -1,0 +1,78 @@
+# 平衡数据集配置
+# 筛选样本数 >= 50 的类别，共 67 类
+# 使用数据增强和类别权重平衡
+
+path: ./database
+train: images/train
+val: images/val
+
+nc: 67
+
+names:
+  0: rice_leaf_roller
+  1: rice_leaf_caterpillar
+  2: paddy_stem_maggot
+  3: asiatic_rice_borer
+  4: yellow_rice_borer
+  5: rice_gall_midge
+  6: Rice_Stemfly
+  7: brown_plant_hopper
+  8: white_backed_plant_hopper
+  9: small_brown_plant_hopper
+  10: rice_water_weevil
+  11: rice_leafhopper
+  12: grain_spreader_thrips
+  13: rice_shell_pest
+  14: grub
+  15: mole_cricket
+  16: wireworm
+  17: white_margined_moth
+  18: black_cutworm
+  19: large_cutworm
+  20: yellow_cutworm
+  21: red_spider
+  22: corn_borer
+  23: army_worm
+  24: aphids
+  25: Potosiabre_vitarsis
+  26: peach_borer
+  27: english_grain_aphid
+  28: green_bug
+  29: bird_cherry-oataphid
+  30: wheat_blossom_midge
+  31: penthaleus_major
+  32: longlegged_spider_mite
+  33: wheat_phloeothrips
+  34: wheat_sawfly
+  35: cerodonta_denticornis
+  36: beet_fly
+  37: flea_beetle
+  38: cabbage_army_worm
+  39: beet_army_worm
+  40: Beet_spot_flies
+  41: meadow_moth
+  42: beet_weevil
+  43: alfalfa_weevil
+  44: flax_budworm
+  45: alfalfa_plant_bug
+  46: tarnished_plant_bug
+  47: Locustoidea
+  48: lytta_polita
+  49: legume_blister_beetle
+  50: blister_beetle
+  51: Pieris_canidia
+  52: Apolygus_lucorum
+  53: Limacodidae
+  54: oides_decempunctata
+  55: parathrene_regalis
+  56: Ampelophaga
+  57: Lycorma_delicatula
+  58: Xylotrechus
+  59: Cicadella_viridis
+  60: Miridae
+  61: Trialeurodes_vaporariorum
+  62: Erythroneura_apicalis
+  63: Papilio_xuthus
+  64: Prodenia_litura
+  65: Phyllocnistis_citrella_Stainton
+  66: Cicadellidae

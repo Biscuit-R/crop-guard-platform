@@ -25,7 +25,7 @@
 
 .header {
   height: 64px;
-  background-color: #ffffff;
+  background-color: #fffdf7;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -54,7 +54,7 @@
   content: '';
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(240, 253, 250, 0.22);
+  background: rgba(254, 249, 239, 0.28);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: -1;
@@ -62,7 +62,7 @@
 
 .bottom-nav {
   height: 64px;
-  background-color: #ffffff;
+  background-color: #fffdf7;
   border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;

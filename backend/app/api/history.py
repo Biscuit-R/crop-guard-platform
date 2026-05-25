@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from pydantic import BaseModel
+from typing import List
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.db_models import User, DetectionHistory
@@ -71,3 +73,25 @@ async def delete_history(
     db.delete(record)
     db.commit()
     return TokenResponse(success=True, message="删除成功")
+
+
+class BatchDeleteRequest(BaseModel):
+    ids: List[int]
+
+
+@router.post("/batch-delete", response_model=TokenResponse)
+async def batch_delete_history(
+    body: BatchDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not body.ids:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="请提供要删除的记录ID")
+
+    deleted = (
+        db.query(DetectionHistory)
+        .filter(DetectionHistory.id.in_(body.ids), DetectionHistory.user_id == current_user.id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return TokenResponse(success=True, message=f"已删除 {deleted} 条记录")

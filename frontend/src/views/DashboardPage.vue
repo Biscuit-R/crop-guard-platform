@@ -2,17 +2,17 @@
   <div class="dashboard-page">
     <div class="page-header">
       <h1 class="page-title">数据看板</h1>
-      <p class="page-subtitle">实时掌握检测动态与使用统计</p>
+      <p class="page-subtitle">当日服务器使用状况</p>
     </div>
 
     <div class="stats-cards">
       <div class="stat-card">
-        <div class="stat-icon" style="background: #0d9488">
+        <div class="stat-icon" style="background: #b45309">
           <el-icon :size="24" color="#ffffff"><Picture /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.total_detections }}</div>
-          <div class="stat-label">总检测次数</div>
+          <div class="stat-value">{{ stats.today_detections }}</div>
+          <div class="stat-label">今日检测次数</div>
         </div>
       </div>
       <div class="stat-card">
@@ -20,26 +20,26 @@
           <el-icon :size="24" color="#ffffff"><Aim /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.total_objects }}</div>
-          <div class="stat-label">累计检测目标</div>
+          <div class="stat-value">{{ stats.today_objects }}</div>
+          <div class="stat-label">今日检测目标</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: #3b82f6">
-          <el-icon :size="24" color="#ffffff"><CircleCheck /></el-icon>
+          <el-icon :size="24" color="#ffffff"><User /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.success_rate }}%</div>
-          <div class="stat-label">检测成功率</div>
+          <div class="stat-value">{{ stats.today_users }}</div>
+          <div class="stat-label">今日活跃用户</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: #f59e0b">
-          <el-icon :size="24" color="#ffffff"><Calendar /></el-icon>
+          <el-icon :size="24" color="#ffffff"><UserFilled /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.active_days }}</div>
-          <div class="stat-label">使用天数</div>
+          <div class="stat-value">{{ stats.total_users }}</div>
+          <div class="stat-label">平台总用户</div>
         </div>
       </div>
     </div>
@@ -49,8 +49,17 @@
         <div class="section-card">
           <div class="section-header">
             <span class="section-title">更新公告</span>
+            <el-button text type="primary" @click="$router.push('/changelog')">查看全部</el-button>
           </div>
           <div class="announcement-list">
+            <div class="announcement-item">
+              <div class="announcement-dot"></div>
+              <div class="announcement-content">
+                <div class="announcement-title">讨论区功能上线</div>
+                <div class="announcement-desc">支持用户上传图片交流学习，管理员审核管理</div>
+                <div class="announcement-time">2026-05-25</div>
+              </div>
+            </div>
             <div class="announcement-item">
               <div class="announcement-dot"></div>
               <div class="announcement-content">
@@ -62,17 +71,9 @@
             <div class="announcement-item">
               <div class="announcement-dot"></div>
               <div class="announcement-content">
-                <div class="announcement-title">批量检测优化</div>
-                <div class="announcement-desc">批量检测支持更多图片格式，检测速度提升 30%</div>
+                <div class="announcement-title">模型升级至 v1.0.0</div>
+                <div class="announcement-desc">基于67类平衡数据集重新训练，检测精度显著提升</div>
                 <div class="announcement-time">2026-05-18</div>
-              </div>
-            </div>
-            <div class="announcement-item">
-              <div class="announcement-dot"></div>
-              <div class="announcement-content">
-                <div class="announcement-title">病虫害图鉴更新</div>
-                <div class="announcement-desc">新增 12 种常见病虫害类别，覆盖更多农作物场景</div>
-                <div class="announcement-time">2026-05-15</div>
               </div>
             </div>
           </div>
@@ -110,16 +111,16 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import {
-  Picture, Aim, CircleCheck, Calendar,
+  Picture, Aim, User, UserFilled,
 } from "@element-plus/icons-vue";
 import { getDashboardStats } from "../api/dashboard";
 import { getHistoryList } from "../api/history";
 
 const stats = reactive({
-  total_detections: 0,
-  total_objects: 0,
-  success_rate: 0,
-  active_days: 0,
+  today_detections: 0,
+  today_objects: 0,
+  today_users: 0,
+  total_users: 0,
 });
 
 const recentRecords = ref([]);
@@ -128,10 +129,10 @@ onMounted(async () => {
   try {
     const res = await getDashboardStats();
     if (res) {
-      stats.total_detections = res.total_detections ?? 0;
-      stats.total_objects = res.total_objects ?? 0;
-      stats.success_rate = res.success_rate ?? 0;
-      stats.active_days = res.active_days ?? 0;
+      stats.today_detections = res.today_detections ?? 0;
+      stats.today_objects = res.today_objects ?? 0;
+      stats.today_users = res.today_users ?? 0;
+      stats.total_users = res.total_users ?? 0;
     }
   } catch (e) {
     console.error("获取统计数据失败:", e);
@@ -241,7 +242,7 @@ onMounted(async () => {
     .recent-item {
       display: flex; align-items: center; gap: 12px; padding: 12px;
       background-color: var(--bg-muted); border-radius: var(--radius-md); transition: background-color 0.2s ease;
-      &:hover { background-color: #f0fdfa; }
+      &:hover { background-color: #fef9ef; }
       .recent-preview {
         width: 48px; height: 48px; border-radius: var(--radius-sm); overflow: hidden;
         background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;

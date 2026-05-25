@@ -13,6 +13,7 @@ from app.api.history import router as history_router
 from app.api.dashboard import router as dashboard_router
 from app.api.dataset import router as dataset_router
 from app.api.admin import router as admin_router
+from app.api.forum import router as forum_router
 from app.utils.paths import Paths
 
 import app.models.db_models  # noqa: F401
@@ -70,6 +71,16 @@ def _run_migrations():
                 conn.execute(text(ddl))
                 conn.commit()
 
+        # forum_posts 表迁移（精选置顶字段）
+        result = conn.execute(text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name='forum_posts' AND column_name='is_pinned'"
+        ))
+        if not result.fetchone():
+            logger.info("[迁移] 添加 forum_posts.is_pinned 列")
+            conn.execute(text("ALTER TABLE forum_posts ADD COLUMN is_pinned BOOLEAN NOT NULL DEFAULT false"))
+            conn.commit()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -112,6 +123,7 @@ app.include_router(history_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(dataset_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(forum_router, prefix="/api")
 
 
 @app.get("/")

@@ -1,19 +1,19 @@
 :root {
-  --primary-color: #0d9488;
-  --primary-light: rgba(13, 148, 136, 0.08);
-  --primary-glow: rgba(13, 148, 136, 0.15);
-  --primary-hover: #0f766e;
+  --primary-color: #b45309;
+  --primary-light: rgba(180, 83, 9, 0.08);
+  --primary-glow: rgba(180, 83, 9, 0.15);
+  --primary-hover: #92400e;
   --success-color: #22c55e;
   --accent-green: #16a34a;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --border-color: #e5e7eb;
+  --text-primary: #3c2a10;
+  --text-secondary: #8c7a5e;
+  --border-color: #e8dcc8;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --card-shadow-hover: 0 6px 16px rgba(13, 148, 136, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
-  --card-shadow-active: 0 2px 8px rgba(13, 148, 136, 0.12);
-  --bg-color: #f0fdfa;
-  --bg-muted: #f9fafb;
-  --surface: #ffffff;
+  --card-shadow-hover: 0 6px 16px rgba(180, 83, 9, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --card-shadow-active: 0 2px 8px rgba(180, 83, 9, 0.12);
+  --bg-color: #fef9ef;
+  --bg-muted: #fdf6e3;
+  --surface: #fffdf7;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -34,7 +34,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-primary);
-  background-color: #f0fdfa;
+  background-color: #fef9ef;
 }
 
 #app {
@@ -57,7 +57,7 @@ body {
 }
 
 .el-button--primary:not(.is-disabled):active {
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.25);
 }
 
 /* 卡片悬浮反馈 */
@@ -79,7 +79,7 @@ body {
 }
 
 .el-input__wrapper.is-focus {
-  box-shadow: 0 0 0 2px var(--primary-color), 0 0 12px rgba(13, 148, 136, 0.15) !important;
+  box-shadow: 0 0 0 2px var(--primary-color), 0 0 12px rgba(180, 83, 9, 0.15) !important;
 }
 
 /* 导航项按压反馈 */
@@ -112,12 +112,12 @@ a:active {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(13, 148, 136, 0.15);
+  background: rgba(180, 83, 9, 0.15);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(13, 148, 136, 0.25);
+  background: rgba(180, 83, 9, 0.25);
 }
 
 /* ========== 全局动画 ========== */
@@ -139,6 +139,6 @@ a:active {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.2); }
-  50% { box-shadow: 0 0 0 6px rgba(13, 148, 136, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(180, 83, 9, 0); }
 }

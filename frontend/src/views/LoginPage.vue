@@ -222,12 +222,12 @@ const handleLogin = () => {
 .logo-icon {
   width: 64px;
   height: 64px;
-  background: #0d9488;
+  background: #b45309;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+  box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
   flex-shrink: 0;
   animation: fade-up 0.6s var(--ease-out-expo) both;
   animation-delay: 0.15s;
@@ -285,8 +285,8 @@ const handleLogin = () => {
   border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
-  background: #0d9488;
-  border-color: #0d9488;
+  background: #b45309;
+  border-color: #b45309;
   transition: all 0.2s var(--ease-out-expo);
   letter-spacing: 0.04em;
   position: relative;
@@ -296,15 +296,15 @@ const handleLogin = () => {
 }
 
 .login-btn:hover {
-  background: #0f766e;
-  border-color: #0f766e;
-  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+  background: #92400e;
+  border-color: #92400e;
+  box-shadow: 0 4px 16px rgba(180, 83, 9, 0.3);
   transform: translateY(-1px);
 }
 
 .login-btn:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.2);
   filter: brightness(0.95);
 }
 
@@ -319,7 +319,7 @@ const handleLogin = () => {
 }
 
 .login-card :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px #0d9488, 0 0 16px rgba(13, 148, 136, 0.12) !important;
+  box-shadow: 0 0 0 2px #b45309, 0 0 16px rgba(180, 83, 9, 0.12) !important;
 }
 
 .register-link {
@@ -329,7 +329,7 @@ const handleLogin = () => {
 }
 
 .register-link a {
-  color: #0d9488;
+  color: #b45309;
   margin-left: 4px;
   cursor: pointer;
   font-weight: 500;

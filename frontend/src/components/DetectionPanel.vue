@@ -100,7 +100,7 @@ defineEmits(["redetect"]);
 .detection-item:nth-child(3) { animation-delay: 0.5s; }
 .detection-item:nth-child(4) { animation-delay: 0.6s; }
 .detection-item:nth-child(5) { animation-delay: 0.7s; }
-.detection-item:hover { background-color: #f0fdfa; transform: translateX(2px); }
+.detection-item:hover { background-color: #fef9ef; transform: translateX(2px); }
 
 .item-name { font-size: 13px; color: var(--text-primary); }
 .item-confidence { font-size: 12px; font-weight: 500; color: var(--primary-color); }
@@ -117,10 +117,10 @@ defineEmits(["redetect"]);
 }
 .action-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
 .action-card:active { transform: scale(0.97); box-shadow: var(--card-shadow-active); }
-.action-card--primary { background: linear-gradient(135deg, #0d9488, #14b8a6); border-color: #0d9488; }
+.action-card--primary { background: linear-gradient(135deg, #b45309, #d97706); border-color: #b45309; }
 .action-card--primary .action-icon,
 .action-card--primary .action-label { color: #ffffff; }
-.action-card--primary:hover { box-shadow: 0 4px 14px rgba(13,148,136,0.25); }
+.action-card--primary:hover { box-shadow: 0 4px 14px rgba(180,83,9,0.25); }
 
 .action-icon { font-size: 16px; color: var(--primary-color); transition: transform 0.3s var(--ease-spring); }
 .action-card:hover .action-icon { transform: scale(1.1); }

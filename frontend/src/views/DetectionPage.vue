@@ -30,7 +30,7 @@
           <div class="settings-row">
             <span class="settings-label">检测模型</span>
             <el-select v-model="selectedModel" size="small" style="width: 100%" @change="handleModelSwitch" :loading="modelsLoading">
-              <el-option v-for="m in availableModels" :key="m.filename" :label="`${m.version} (${m.size_mb}MB)`" :value="m.filename" />
+              <el-option v-for="m in availableModels" :key="m.filename" :label="m.display_name || `${m.version} (${m.size_mb}MB)`" :value="m.filename" />
             </el-select>
           </div>
           <div class="settings-row">
@@ -65,7 +65,7 @@
         <!-- 图片检测模式 -->
         <template v-if="activeMode === 'image'">
           <div class="result-layout">
-            <div class="result-left" :class="{ 'has-result': detectionResult || videoResult }">
+            <div class="result-left">
               <!-- 无结果：上传区域 -->
               <div v-if="!detectionResult" class="upload-section">
                 <div
@@ -146,7 +146,7 @@
         <!-- 视频检测模式 -->
         <template v-if="activeMode === 'video'">
           <div class="result-layout">
-            <div class="result-left" :class="{ 'has-result': detectionResult || videoResult }">
+            <div class="result-left">
               <!-- 无结果：上传区域 -->
               <div v-if="!videoResult" class="upload-section">
                 <div
@@ -460,7 +460,7 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 </script>
 
 <style scoped>
-.detection-page { width: 100%; max-width: 1040px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; }
+.detection-page { width: 100%; max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; padding-bottom: 24px; }
 
 /* === 页头 === */
 .page-header { margin-bottom: 24px; flex-shrink: 0; animation: fade-up 0.6s var(--ease-out-expo) both; }
@@ -471,8 +471,6 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .main-body {
   display: flex;
   gap: 16px;
-  flex: 1;
-  min-height: 0;
 }
 
 .controls-sidebar {
@@ -486,18 +484,16 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .content-area {
   flex: 1;
   min-width: 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .result-layout {
   display: flex; flex-direction: column; gap: 16px;
-  flex: 1; min-height: 0;
 }
 
 .result-left {
-  flex: 0 0 auto; min-width: 0;
+  min-width: 0;
   background: #ffffff; border-radius: 14px; padding: 24px;
   display: flex; flex-direction: column;
   box-shadow: var(--card-shadow);
@@ -507,9 +503,6 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
   animation-delay: 0.15s;
 }
 .result-left:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
-.result-left.has-result {
-  align-self: flex-start;
-}
 
 /* === 模式切换 === */
 .mode-switch {
@@ -613,13 +606,13 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
   cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative;
   background: #f1f5f9;
 }
-.batch-thumb.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(13,148,136,0.15); }
+.batch-thumb.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(180,83,9,0.15); }
 .batch-thumb.failed { opacity: 0.5; }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb-error { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ef4444; }
 .thumb-count {
   position: absolute; bottom: 2px; right: 2px; font-size: 10px; font-weight: 600;
-  background: rgba(13,148,136,0.9); color: #fff; padding: 1px 5px; border-radius: 4px;
+  background: rgba(180,83,9,0.9); color: #fff; padding: 1px 5px; border-radius: 4px;
 }
 
 /* === 视频结果 === */

@@ -54,3 +54,33 @@ class RevokedToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     jti = Column(String(36), unique=True, nullable=False, index=True)
     revoked_at = Column(DateTime, default=_utcnow)
+
+
+class ForumPost(Base):
+    __tablename__ = "forum_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    content = Column(String(5000), nullable=False)
+    image_url = Column(String(500))
+    status = Column(String(20), default="pending", nullable=False)  # pending / approved / rejected
+    is_pinned = Column(Boolean, default=False, nullable=False)
+    admin_note = Column(String(500))
+    created_at = Column(DateTime, default=_utcnow, index=True)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    user = relationship("User")
+    comments = relationship("ForumComment", back_populates="post", cascade="all, delete-orphan")
+
+
+class ForumComment(Base):
+    __tablename__ = "forum_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("forum_posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    content = Column(String(2000), nullable=False)
+    created_at = Column(DateTime, default=_utcnow)
+
+    post = relationship("ForumPost", back_populates="comments")
+    user = relationship("User")

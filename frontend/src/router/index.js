@@ -42,6 +42,18 @@ const routes = [
     meta: { title: "病虫害图鉴" },
     component: () => import("../views/PestGuidePage.vue"),
   },
+  {
+    path: "/discussion",
+    name: "Discussion",
+    meta: { title: "讨论区" },
+    component: () => import("../views/DiscussionPage.vue"),
+  },
+  {
+    path: "/changelog",
+    name: "Changelog",
+    meta: { title: "更新日志" },
+    component: () => import("../views/ChangelogPage.vue"),
+  },
   // 高级功能路由
   {
     path: "/tools",

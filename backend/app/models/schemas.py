@@ -156,10 +156,10 @@ class HistoryListResponse(BaseModel):
 # ==================== 看板统计 Schema ====================
 
 class DashboardStats(BaseModel):
-    total_detections: int
-    total_objects: int
-    success_rate: float
-    active_days: int
+    today_detections: int
+    today_objects: int
+    today_users: int
+    total_users: int
 
 
 # ==================== 模型状态 Schema ====================
@@ -184,6 +184,8 @@ class ModelInfo(BaseModel):
     size_mb: float
     modified_at: str
     is_current: bool
+    display_name: str = ""
+    description: str = ""
 
 
 class ModelListResponse(BaseModel):
@@ -207,3 +209,57 @@ class VersionHistoryResponse(BaseModel):
     success: bool
     message: str = ""
     data: List[VersionHistoryItem] = []
+
+
+# ==================== 讨论区 Schema ====================
+
+class ForumPostCreate(BaseModel):
+    content: str = Field(..., min_length=1, max_length=5000)
+
+
+class ForumCommentCreate(BaseModel):
+    content: str = Field(..., min_length=1, max_length=2000)
+
+
+class ForumCommentItem(BaseModel):
+    id: int
+    content: str
+    username: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ForumPostItem(BaseModel):
+    id: int
+    content: str
+    image_url: Optional[str] = None
+    status: str
+    is_pinned: bool = False
+    admin_note: Optional[str] = None
+    username: str
+    comment_count: int = 0
+    created_at: datetime
+    comments: Optional[List[ForumCommentItem]] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ForumPostListResponse(BaseModel):
+    success: bool
+    message: str = ""
+    data: List[ForumPostItem] = []
+    total: int = 0
+
+
+class ForumPostResponse(BaseModel):
+    success: bool
+    message: str = ""
+    data: Optional[ForumPostItem] = None
+
+
+class AdminReviewRequest(BaseModel):
+    status: str = Field(..., pattern=r"^(approved|rejected)$")
+    note: Optional[str] = Field(None, max_length=500)
