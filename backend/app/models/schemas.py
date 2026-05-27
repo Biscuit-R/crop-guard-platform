@@ -13,6 +13,7 @@ class DetectionBox(BaseModel):
     confidence: float
     class_id: int
     class_name: str
+    chinese_name: str = ""
 
 
 class DetectionResult(BaseModel):
@@ -67,12 +68,36 @@ class VideoDetectionResponse(BaseModel):
     data: Optional[VideoDetectionResult] = None
 
 
+class FrameDetectionResult(BaseModel):
+    boxes: List[DetectionBox]
+    total_objects: int
+    detection_time: float
+
+
+class FrameDetectionResponse(BaseModel):
+    success: bool
+    message: str
+    data: Optional[FrameDetectionResult] = None
+
+
 class PestItem(BaseModel):
     id: int
     name: str
     chinese_name: str
+    scientific_name: str = ""
     category: str
+    pest_type: str = ""  # 害虫类型
+    region: str = ""  # 分布区域
+    season: str = ""  # 发生季节
+    order: str = ""  # 目
+    family: str = ""  # 科
     description: Optional[str] = None
+    host_plants: str = ""  # 寄主植物
+    morphology: str = ""  # 形态特征
+    damage_symptoms: str = ""  # 危害症状
+    occurrence_period: str = ""  # 发生时期
+    control_methods: str = ""  # 防治方法
+    distribution: str = ""  # 分布
 
 
 class PestListResponse(BaseModel):
@@ -160,6 +185,10 @@ class DashboardStats(BaseModel):
     today_objects: int
     today_users: int
     total_users: int
+    total_detections: int = 0
+    total_objects: int = 0
+    success_rate: float = 0
+    active_days: int = 0
 
 
 # ==================== 模型状态 Schema ====================
@@ -233,6 +262,7 @@ class ForumCommentItem(BaseModel):
 
 class ForumPostItem(BaseModel):
     id: int
+    user_id: int
     content: str
     image_url: Optional[str] = None
     status: str

@@ -97,28 +97,43 @@ def _fill_rounded_rect(img, pt1, pt2, color, radius=12, alpha=0.15):
 
 
 def _draw_label(img, text, x, y, color, font_scale=0.45):
-    """绘制带圆角背景的标签"""
+    """绘制带圆角背景的标签（含阴影）"""
     font = cv2.FONT_HERSHEY_SIMPLEX
     thickness = 1
     (tw, th), baseline = cv2.getTextSize(text, font, font_scale, thickness)
 
-    label_w = tw + 12
-    label_h = th + 8
+    label_w = tw + 14
+    label_h = th + 10
     lx1 = x
     ly1 = y - label_h
     lx2 = x + label_w
     ly2 = y
 
+    # 阴影层
+    shadow = img.copy()
+    cv2.rectangle(shadow, (lx1 + 2, ly1 + 2), (lx2 + 2, ly2 + 2), (0, 0, 0), -1)
+    cv2.addWeighted(shadow, 0.15, img, 0.85, 0, img)
+
     # 背景填充（圆角矩形）
-    _fill_rounded_rect(img, (lx1, ly1), (lx2, ly2), color, radius=6, alpha=0.88)
+    _fill_rounded_rect(img, (lx1, ly1), (lx2, ly2), color, radius=6, alpha=0.92)
 
-    # 边框
-    _rounded_rect(img, (lx1, ly1), (lx2, ly2), color, radius=6, thickness=1)
-
-    # 文字
-    text_x = lx1 + 6
-    text_y = ly2 - baseline - 3
+    # 文字（白色，抗锯齿）
+    text_x = lx1 + 7
+    text_y = ly2 - baseline - 4
     cv2.putText(img, text, (text_x, text_y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+
+
+def _draw_confidence_bar(img, x1, y1, x2, y2, color, confidence, bar_h=4):
+    """在检测框底部绘制置信度进度条"""
+    bar_w = int((x2 - x1) * confidence)
+    if bar_w < 1:
+        return
+    # 半透明黑色背景
+    overlay = img.copy()
+    cv2.rectangle(overlay, (x1, y2 - bar_h), (x2, y2), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.3, img, 0.7, 0, img)
+    # 置信度条（类色填充）
+    cv2.rectangle(img, (x1, y2 - bar_h), (x1 + bar_w, y2), color, -1)
 
 
 def draw_detections(image: np.ndarray, boxes: list, class_names: dict, cn_names: dict = None) -> np.ndarray:
@@ -145,19 +160,18 @@ def draw_detections(image: np.ndarray, boxes: list, class_names: dict, cn_names:
         confidence = float(box.conf[0])
         class_id = int(box.cls[0])
         en_name = class_names.get(class_id, f"class_{class_id}")
-        # 优先使用中文学名
         display_name = cn_names.get(en_name, en_name) if cn_names else en_name
         color = _get_color(class_id)
 
         # 1. 半透明填充
-        _fill_rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, alpha=0.08)
+        _fill_rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, alpha=0.06)
 
         # 2. 圆角边框
         _rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, thickness=line_w)
 
-        # 3. 四角高亮装饰线（加粗角标效果）
-        corner_len = max(12, int(min(x2 - x1, y2 - y1) * 0.15))
-        thick = line_w + 1
+        # 3. 四角加粗装饰线
+        corner_len = max(14, int(min(x2 - x1, y2 - y1) * 0.18))
+        thick = line_w + 2
         # 左上
         cv2.line(img, (x1, y1), (x1 + corner_len, y1), color, thick, cv2.LINE_AA)
         cv2.line(img, (x1, y1), (x1, y1 + corner_len), color, thick, cv2.LINE_AA)
@@ -171,14 +185,66 @@ def draw_detections(image: np.ndarray, boxes: list, class_names: dict, cn_names:
         cv2.line(img, (x2, y2), (x2 - corner_len, y2), color, thick, cv2.LINE_AA)
         cv2.line(img, (x2, y2), (x2, y2 - corner_len), color, thick, cv2.LINE_AA)
 
-        # 4. 标签
-        label = f"{display_name} {confidence:.0%}"
+        # 4. 底部置信度进度条
+        _draw_confidence_bar(img, x1, y1, x2, y2, color, confidence)
+
+        # 5. 标签（含阴影）— 使用英文名避免 OpenCV 中文渲染乱码
+        label = f"{en_name} {confidence:.0%}"
         label_y = y1 - 6
-        if label_y < 25:
+        if label_y < 30:
             label_y = y2 + 6
         _draw_label(img, label, x1, label_y, color, font_scale=font_scale)
 
     return img
+
+
+def draw_detections_from_dicts(image: np.ndarray, detections: list) -> np.ndarray:
+    """
+    从字典列表绘制检测框（用于视频非检测帧复用）。
+
+    Args:
+        image: BGR 格式图片
+        detections: [{"x1","y1","x2","y2","confidence","class_id","en_name"}, ...]
+    """
+    if not detections:
+        return image
+
+    img = image.copy()
+    h, w = img.shape[:2]
+    line_w = max(2, int(min(h, w) / 300))
+    font_scale = max(0.35, min(0.6, min(h, w) / 1200))
+
+    for det in detections:
+        x1, y1, x2, y2 = int(det["x1"]), int(det["y1"]), int(det["x2"]), int(det["y2"])
+        confidence = det["confidence"]
+        class_id = det["class_id"]
+        en_name = det["en_name"]
+        color = _get_color(class_id)
+
+        _fill_rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, alpha=0.06)
+        _rounded_rect(img, (x1, y1), (x2, y2), color, radius=10, thickness=line_w)
+
+        corner_len = max(14, int(min(x2 - x1, y2 - y1) * 0.18))
+        thick = line_w + 2
+        cv2.line(img, (x1, y1), (x1 + corner_len, y1), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x1, y1), (x1, y1 + corner_len), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x2, y1), (x2 - corner_len, y1), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x2, y1), (x2, y1 + corner_len), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x1, y2), (x1 + corner_len, y2), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x1, y2), (x1, y2 - corner_len), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x2, y2), (x2 - corner_len, y2), color, thick, cv2.LINE_AA)
+        cv2.line(img, (x2, y2), (x2, y2 - corner_len), color, thick, cv2.LINE_AA)
+
+        _draw_confidence_bar(img, x1, y1, x2, y2, color, confidence)
+
+        label = f"{en_name} {confidence:.0%}"
+        label_y = y1 - 6
+        if label_y < 30:
+            label_y = y2 + 6
+        _draw_label(img, label, x1, label_y, color, font_scale=font_scale)
+
+    return img
+
 
 # 项目根目录
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -211,14 +277,17 @@ class DetectionService:
         if versioned:
             return max(versioned, key=os.path.getmtime)
 
+        # model_*.pt 命名
+        model_files = glob.glob(os.path.join(models_dir, "model_*.pt"))
+        if model_files:
+            return max(model_files, key=os.path.getmtime)
+
         return settings.YOLO_MODEL_PATH
 
     def _extract_version(self, path: str) -> str:
         name = os.path.basename(path)
-        if name == "best.pt":
-            return "latest"
-        if name.startswith("best_v"):
-            return name.replace("best_", "").replace(".pt", "")
+        if name.startswith("model_"):
+            return name.replace("model_", "").replace(".pt", "") + "类"
         return os.path.splitext(name)[0]
 
     def _discover_and_load(self):
@@ -380,13 +449,14 @@ class DetectionService:
                     confidence = float(box.conf[0])
                     class_id = int(box.cls[0])
                     en_name = self.class_names.get(class_id, f"class_{class_id}")
-                    class_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
+                    cn_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
 
                     boxes.append(DetectionBox(
                         x1=x1, y1=y1, x2=x2, y2=y2,
                         confidence=confidence,
                         class_id=class_id,
-                        class_name=class_name
+                        class_name=en_name,
+                        chinese_name=cn_name,
                     ))
 
             result_filename = f"result_{uuid.uuid4().hex}.jpg"
@@ -431,57 +501,123 @@ class DetectionService:
             # 准备输出视频
             result_filename = f"result_{uuid.uuid4().hex}.mp4"
             result_path = os.path.join(settings.RESULT_VIDEO_DIR, result_filename)
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            fourcc = cv2.VideoWriter_fourcc(*"avc1")
             writer = cv2.VideoWriter(result_path, fourcc, fps, (width, height))
 
-            total_objects = 0
+            try:
+                # === 跨帧去重追踪 ===
+                # tracked_objects: [{class_id, cn_name, x1,y1,x2,y2, confidence, last_seen}]
+                tracked_objects = []
+                TRACK_IOU_THRESH = 0.3
+                TRACK_MAX_GAP = int(fps * 2)  # 超过 2 秒未见则视为消失
+
+                def _box_iou(a, b):
+                    ix1 = max(a[0], b[0]); iy1 = max(a[1], b[1])
+                    ix2 = min(a[2], b[2]); iy2 = min(a[3], b[3])
+                    inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
+                    area_a = (a[2] - a[0]) * (a[3] - a[1])
+                    area_b = (b[2] - b[0]) * (b[3] - b[1])
+                    union = area_a + area_b - inter
+                    return inter / union if union > 0 else 0
+
+                key_frames = []
+                processed_frames = 0
+                frame_idx = 0
+                # 暂存上一次检测结果，用于非检测帧复用绘制
+                last_detections = []
+                PERSIST_FRAMES = frame_interval * 3  # 检测框留存帧数（约 3 个检测间隔）
+
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+
+                    if frame_idx % frame_interval == 0:
+                        results = self.model.predict(
+                            source=frame,
+                            conf=conf_threshold,
+                            iou=settings.IOU_THRESHOLD,
+                            save=False,
+                            verbose=False,
+                        )
+
+                        annotated = draw_detections(results[0].orig_img, results[0].boxes, self.class_names, CHINESE_CLASS_NAMES)
+                        writer.write(annotated)
+
+                        # 缓存当前帧检测结果供后续帧复用
+                        last_detections = []
+                        for box in results[0].boxes:
+                            x1, y1, x2, y2 = [float(v) for v in box.xyxy[0].tolist()]
+                            confidence = float(box.conf[0])
+                            class_id = int(box.cls[0])
+                            en_name = self.class_names.get(class_id, f"class_{class_id}")
+                            cn_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
+                            last_detections.append({
+                                "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                                "confidence": confidence,
+                                "class_id": class_id,
+                                "en_name": en_name,
+                                "seen_at": frame_idx,
+                            })
+
+                        # 去重追踪
+                        for det in last_detections:
+                            best_iou = 0
+                            best_idx = -1
+                            for i, tr in enumerate(tracked_objects):
+                                if tr["class_id"] != det["class_id"]:
+                                    continue
+                                if frame_idx - tr["last_seen"] > TRACK_MAX_GAP:
+                                    continue
+                                iou = _box_iou(
+                                    (det["x1"], det["y1"], det["x2"], det["y2"]),
+                                    (tr["x1"], tr["y1"], tr["x2"], tr["y2"]),
+                                )
+                                if iou > best_iou:
+                                    best_iou = iou
+                                    best_idx = i
+
+                            if best_iou >= TRACK_IOU_THRESH:
+                                tr = tracked_objects[best_idx]
+                                tr["x1"], tr["y1"], tr["x2"], tr["y2"] = det["x1"], det["y1"], det["x2"], det["y2"]
+                                tr["confidence"] = max(tr["confidence"], det["confidence"])
+                                tr["last_seen"] = frame_idx
+                            else:
+                                tracked_objects.append({
+                                    "class_id": det["class_id"],
+                                    "cn_name": CHINESE_CLASS_NAMES.get(det["en_name"], det["en_name"]),
+                                    "x1": det["x1"], "y1": det["y1"], "x2": det["x2"], "y2": det["y2"],
+                                    "confidence": det["confidence"],
+                                    "last_seen": frame_idx,
+                                })
+
+                        # 保存关键帧（有检测目标的帧）
+                        if len(results[0].boxes) > 0 and len(key_frames) < 10:
+                            kf_filename = f"kf_{uuid.uuid4().hex}.jpg"
+                            kf_path = os.path.join(settings.RESULT_VIDEO_DIR, kf_filename)
+                            cv2.imwrite(kf_path, annotated)
+                            key_frames.append(get_file_url(kf_filename, settings.RESULT_VIDEO_DIR))
+
+                        processed_frames += 1
+                    else:
+                        # 非检测帧：复用上一次的检测框绘制，消除闪烁
+                        recent = [d for d in last_detections if frame_idx - d["seen_at"] < PERSIST_FRAMES]
+                        if recent:
+                            annotated = draw_detections_from_dicts(frame, recent)
+                            writer.write(annotated)
+                        else:
+                            writer.write(frame)
+
+                    frame_idx += 1
+            finally:
+                cap.release()
+                writer.release()
+
+            # 汇总去重结果
             class_summary = {}
-            key_frames = []
-            processed_frames = 0
-            frame_idx = 0
-
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                if frame_idx % frame_interval == 0:
-                    # 检测当前帧
-                    results = self.model.predict(
-                        source=frame,
-                        conf=conf_threshold,
-                        iou=settings.IOU_THRESHOLD,
-                        save=False,
-                        verbose=False,
-                    )
-
-                    annotated = draw_detections(results[0].orig_img, results[0].boxes, self.class_names, CHINESE_CLASS_NAMES)
-                    writer.write(annotated)
-
-                    # 统计检测结果
-                    for box in results[0].boxes:
-                        class_id = int(box.cls[0])
-                        en_name = self.class_names.get(class_id, f"class_{class_id}")
-                        cn_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
-                        class_summary[cn_name] = class_summary.get(cn_name, 0) + 1
-                        total_objects += 1
-
-                    # 保存关键帧（有检测目标的帧）
-                    if len(results[0].boxes) > 0 and len(key_frames) < 10:
-                        kf_filename = f"kf_{uuid.uuid4().hex}.jpg"
-                        kf_path = os.path.join(settings.RESULT_VIDEO_DIR, kf_filename)
-                        cv2.imwrite(kf_path, annotated)
-                        key_frames.append(get_file_url(kf_filename, settings.RESULT_VIDEO_DIR))
-
-                    processed_frames += 1
-                else:
-                    # 非检测帧直接写入原帧
-                    writer.write(frame)
-
-                frame_idx += 1
-
-            cap.release()
-            writer.release()
+            for tr in tracked_objects:
+                cn = tr["cn_name"]
+                class_summary[cn] = class_summary.get(cn, 0) + 1
 
             detection_time = time.time() - start_time
             video_filename = os.path.basename(video_path)
@@ -490,7 +626,7 @@ class DetectionService:
                 detection_id=detection_id,
                 video_url=get_file_url(video_filename, settings.VIDEO_DIR),
                 result_video_url=get_file_url(result_filename, settings.RESULT_VIDEO_DIR),
-                total_objects=total_objects,
+                total_objects=len(tracked_objects),
                 total_frames=total_frames,
                 processed_frames=processed_frames,
                 fps=round(fps, 2),

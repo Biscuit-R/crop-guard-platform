@@ -26,20 +26,20 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: #3b82f6">
-          <el-icon :size="24" color="#ffffff"><User /></el-icon>
+          <el-icon :size="24" color="#ffffff"><Picture /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.today_users }}</div>
-          <div class="stat-label">今日活跃用户</div>
+          <div class="stat-value">{{ stats.total_detections }}</div>
+          <div class="stat-label">总检测次数</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: #f59e0b">
-          <el-icon :size="24" color="#ffffff"><UserFilled /></el-icon>
+          <el-icon :size="24" color="#ffffff"><Aim /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.total_users }}</div>
-          <div class="stat-label">平台总用户</div>
+          <div class="stat-value">{{ stats.total_objects }}</div>
+          <div class="stat-label">累计检测目标</div>
         </div>
       </div>
     </div>
@@ -91,7 +91,7 @@
             <p>暂无检测记录</p>
           </div>
           <div v-else class="recent-list">
-            <div v-for="record in recentRecords" :key="record.id" class="recent-item">
+            <div v-for="record in recentRecords" :key="record.id" class="recent-item" @click="$router.push('/history')">
               <div class="recent-preview">
                 <img v-if="record.result_image" :src="record.result_image" alt="结果" />
                 <el-icon v-else :size="20" color="#9ca3af"><Picture /></el-icon>
@@ -110,41 +110,38 @@
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import {
-  Picture, Aim, User, UserFilled,
-} from "@element-plus/icons-vue";
+import { Picture, Aim } from "@element-plus/icons-vue";
 import { getDashboardStats } from "../api/dashboard";
 import { getHistoryList } from "../api/history";
 
 const stats = reactive({
   today_detections: 0,
   today_objects: 0,
-  today_users: 0,
-  total_users: 0,
+  total_detections: 0,
+  total_objects: 0,
 });
 
 const recentRecords = ref([]);
 
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
 onMounted(async () => {
-  try {
-    const res = await getDashboardStats();
-    if (res) {
-      stats.today_detections = res.today_detections ?? 0;
-      stats.today_objects = res.today_objects ?? 0;
-      stats.today_users = res.today_users ?? 0;
-      stats.total_users = res.total_users ?? 0;
-    }
-  } catch (e) {
-    console.error("获取统计数据失败:", e);
+  const [statsRes, historyRes] = await Promise.all([
+    getDashboardStats().catch(() => null),
+    getHistoryList({ page: 1, page_size: 5 }).catch(() => null),
+  ]);
+
+  if (statsRes) {
+    stats.today_detections = statsRes.today_detections ?? 0;
+    stats.today_objects = statsRes.today_objects ?? 0;
+    stats.total_detections = statsRes.total_detections ?? 0;
+    stats.total_objects = statsRes.total_objects ?? 0;
   }
 
-  try {
-    const res = await getHistoryList({ page: 1, page_size: 5 });
-    if (res.success) {
-      recentRecords.value = res.data;
-    }
-  } catch (e) {
-    console.error("获取最近记录失败:", e);
+  if (historyRes?.success) {
+    recentRecords.value = historyRes.data;
   }
 });
 </script>

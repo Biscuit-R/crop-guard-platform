@@ -61,3 +61,19 @@ export const togglePinPost = (postId) => {
     method: 'put'
   })
 }
+
+// 用户删除自己的帖子
+export const deleteForumPost = (postId) => {
+  return request({
+    url: `/forum/posts/${postId}`,
+    method: 'delete'
+  })
+}
+
+// 管理员删除帖子
+export const adminDeleteForumPost = (postId) => {
+  return request({
+    url: `/forum/admin/posts/${postId}`,
+    method: 'delete'
+  })
+}

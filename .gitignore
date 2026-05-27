@@ -12,9 +12,10 @@ venv/
 .env
 .env.local
 
-# IDE
+# IDE / Tools
 .vscode/
 .idea/
+.impeccable/
 *.swp
 *.swo
 
@@ -57,4 +58,3 @@ training/versions.json
 
 # Internal docs (not included in release)
 DESIGN.md
-PRODUCT.md

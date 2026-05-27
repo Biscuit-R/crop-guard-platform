@@ -76,9 +76,13 @@ _check_insecure_defaults(settings)
 
 # 模型注册表：将文件名映射到显示名称
 MODEL_REGISTRY = {
-    "best.pt": {
-        "display_name": "病虫害检测-v1.0.0-轻量版",
-        "description": "基于67类平衡数据集训练，轻量级检测模型",
+    "model_67.pt": {
+        "display_name": "CropGuard v1.0 精准版",
+        "description": "67类病虫害高精度检测",
+    },
+    "model_102.pt": {
+        "display_name": "CropGuard v1.0 广谱版",
+        "description": "102类病虫害广覆盖",
     },
 }
 

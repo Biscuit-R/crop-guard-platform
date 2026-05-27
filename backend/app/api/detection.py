@@ -1,24 +1,32 @@
 import os
+import time
+import asyncio
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+import cv2
+import numpy as np
 from sqlalchemy.orm import Session
 from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
 from app.utils.auth_utils import get_current_user
 from app.database import get_db
 from app.models.db_models import User, DetectionHistory
-from app.config import settings
+from app.config import settings, CHINESE_CLASS_NAMES
 from app.models.schemas import (
     SingleDetectionResponse, BatchDetectionResponse, VideoDetectionResponse, PestListResponse, PestItem,
     ModelStatusResponse, ModelStatus,
     ModelListResponse, ModelInfo,
     ModelSwitchRequest,
     VersionHistoryResponse, VersionHistoryItem,
+    FrameDetectionResponse, FrameDetectionResult,
 )
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 
 ensure_directories()
+
+# 摄像头帧检测并发控制（最多同时处理 5 个请求）
+_frame_semaphore = asyncio.Semaphore(5)
 
 
 @router.post("/single", response_model=SingleDetectionResponse)
@@ -123,12 +131,14 @@ async def detect_video(
         actual_model = detection_service.current_model_version or model_name
         result = detection_service.detect_video(video_path, actual_model, conf=conf, frame_interval=frame_interval)
 
+        cover_url = result.key_frames[0] if result.key_frames else None
         history = DetectionHistory(
             user_id=current_user.id,
             filename=file.filename or filename,
             media_type="video",
             video_url=result.video_url,
             result_video_url=result.result_video_url,
+            result_image=cover_url,
             frame_count=result.total_frames,
             fps=result.fps,
             duration=result.duration,
@@ -216,27 +226,84 @@ async def get_model_history(current_user: User = Depends(get_current_user)):
     )
 
 
+@router.post("/frame", response_model=FrameDetectionResponse)
+async def detect_frame(
+    file: UploadFile = File(...),
+    model_name: str = Form("pest-v1"),
+    conf: float = Form(None),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    单帧实时检测（摄像头模式用）
+
+    接收一帧图片（JPEG/PNG），返回检测框坐标和类别信息
+    """
+    if detection_service.model is None:
+        return FrameDetectionResponse(
+            success=False, message="模型未加载，请检查模型状态", data=None,
+        )
+
+    try:
+        async with _frame_semaphore:
+            start = time.time()
+            content = await file.read()
+            if not content or len(content) < 100:
+                return FrameDetectionResponse(
+                    success=False, message="图像数据为空或过小", data=None,
+                )
+
+            nparr = np.frombuffer(content, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if frame is None:
+                return FrameDetectionResponse(
+                    success=False, message="无法解析图片帧", data=None,
+                )
+
+            results = detection_service.model.predict(
+                source=frame,
+                conf=conf if conf is not None else settings.CONFIDENCE_THRESHOLD,
+                iou=settings.IOU_THRESHOLD,
+                imgsz=640,
+                save=False,
+                verbose=False,
+            )
+
+            boxes = []
+            for result in results:
+                for box in result.boxes:
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    confidence = float(box.conf[0])
+                    class_id = int(box.cls[0])
+                    en_name = detection_service.class_names.get(class_id, f"class_{class_id}")
+                    cn_name = CHINESE_CLASS_NAMES.get(en_name, en_name)
+                    boxes.append({
+                        "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                        "confidence": confidence,
+                        "class_id": class_id,
+                        "class_name": en_name,
+                        "chinese_name": cn_name,
+                    })
+
+            detection_time = time.time() - start
+            return FrameDetectionResponse(
+                success=True,
+                message="检测完成",
+                data=FrameDetectionResult(
+                    boxes=boxes,
+                    total_objects=len(boxes),
+                    detection_time=round(detection_time, 3),
+                )
+            )
+    except Exception as e:
+        return FrameDetectionResponse(
+            success=False, message=f"帧检测失败: {str(e)}", data=None,
+        )
+
+
 @router.get("/pests/list", response_model=PestListResponse)
 async def get_pest_list():
-    pests = [
-        # 真菌病害
-        PestItem(id=1, name="leaf_blight", chinese_name="叶斑病", category="真菌病害", description="叶片出现褐色或黑色斑点，严重时导致叶片枯死"),
-        PestItem(id=2, name="rust", chinese_name="锈病", category="真菌病害", description="叶片背面出现铁锈色孢子堆，影响光合作用"),
-        PestItem(id=3, name="powdery_mildew", chinese_name="白粉病", category="真菌病害", description="叶片表面覆盖白色粉状霉层"),
-        PestItem(id=4, name="anthracnose", chinese_name="炭疽病", category="真菌病害", description="叶片和果实出现凹陷的黑色病斑"),
-        # 细菌病害
-        PestItem(id=5, name="bacterial_spot", chinese_name="细菌性斑点", category="细菌病害", description="叶片出现水渍状小斑点，后期变为褐色"),
-        PestItem(id=6, name="soft_rot", chinese_name="软腐病", category="细菌病害", description="组织软化腐烂，有恶臭气味"),
-        PestItem(id=7, name="bacterial_wilt", chinese_name="青枯病", category="细菌病害", description="植株迅速萎蔫，维管束变褐"),
-        # 病毒病害
-        PestItem(id=8, name="mosaic_virus", chinese_name="花叶病毒", category="病毒病害", description="叶片出现黄绿相间的花叶症状，植株矮化"),
-        PestItem(id=9, name="yellowing_virus", chinese_name="黄化病毒", category="病毒病害", description="叶片黄化，植株生长受阻"),
-        # 虫害
-        PestItem(id=10, name="aphid", chinese_name="蚜虫", category="虫害", description="吸食植物汁液，导致叶片卷曲、发黄"),
-        PestItem(id=11, name="caterpillar", chinese_name="毛虫", category="虫害", description="啃食叶片，造成缺刻或孔洞"),
-        PestItem(id=12, name="leaf_miner", chinese_name="潜叶蝇", category="虫害", description="幼虫在叶片内部取食，形成蜿蜒隧道"),
-        PestItem(id=13, name="red_spider", chinese_name="红蜘蛛", category="虫害", description="吸食叶片汁液，出现密集白色小点"),
-    ]
+    from app.data.pest_database import PEST_DATABASE
+    pests = [PestItem(id=i + 1, **item) for i, item in enumerate(PEST_DATABASE)]
     return PestListResponse(
         success=True,
         message="获取成功",

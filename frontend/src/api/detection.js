@@ -56,3 +56,13 @@ export const switchModel = (version) => {
     data: { version }
   })
 }
+
+export const detectFrame = (data) => {
+  return request({
+    url: '/detection/frame',
+    method: 'post',
+    data,
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 15000
+  })
+}

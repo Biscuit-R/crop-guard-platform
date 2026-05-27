@@ -27,6 +27,7 @@ os.makedirs(FORUM_IMAGE_DIR, exist_ok=True)
 def _build_post_item(post: ForumPost, include_comments: bool = False) -> ForumPostItem:
     item = ForumPostItem(
         id=post.id,
+        user_id=post.user_id,
         content=post.content,
         image_url=post.image_url,
         status=post.status,
@@ -213,3 +214,50 @@ async def admin_pin_post(
     db.commit()
 
     return TokenResponse(success=True, message="已置顶" if post.is_pinned else "已取消置顶", data={"is_pinned": post.is_pinned})
+
+
+@router.delete("/posts/{post_id}", response_model=TokenResponse)
+async def delete_own_post(
+    post_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    post = db.query(ForumPost).filter(ForumPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="帖子不存在")
+    if post.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只能删除自己发布的帖子")
+
+    # 删除关联图片
+    if post.image_url:
+        image_path = os.path.join(FORUM_IMAGE_DIR, os.path.basename(post.image_url))
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    db.query(ForumComment).filter(ForumComment.post_id == post_id).delete()
+    db.delete(post)
+    db.commit()
+
+    return TokenResponse(success=True, message="帖子已删除")
+
+
+@router.delete("/admin/posts/{post_id}", response_model=TokenResponse)
+async def admin_delete_post(
+    post_id: int,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    post = db.query(ForumPost).filter(ForumPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="帖子不存在")
+
+    if post.image_url:
+        image_path = os.path.join(FORUM_IMAGE_DIR, os.path.basename(post.image_url))
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    db.query(ForumComment).filter(ForumComment.post_id == post_id).delete()
+    db.delete(post)
+    db.commit()
+
+    return TokenResponse(success=True, message="帖子已删除")

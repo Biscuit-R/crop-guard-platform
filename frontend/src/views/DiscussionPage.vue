@@ -80,6 +80,15 @@
             </div>
             <div v-if="activeTab === 'pending'" class="post-status-badge pending">待审核</div>
             <div v-else-if="post.status === 'rejected'" class="post-status-badge rejected">已拒绝</div>
+            <el-button
+              v-if="canDelete(post)"
+              class="post-delete-btn"
+              type="danger"
+              :icon="Delete"
+              circle
+              size="small"
+              @click.stop="handleDelete(post)"
+            />
           </div>
         </div>
 
@@ -171,6 +180,22 @@
             <el-icon><Star /></el-icon>
             {{ currentPost.is_pinned ? '取消精选' : '设为精选' }}
           </el-button>
+          <el-button
+            type="danger"
+            size="small"
+            @click="handleDelete(currentPost)"
+          >
+            <el-icon><Delete /></el-icon>
+            删除
+          </el-button>
+        </div>
+
+        <!-- 用户删除自己的帖子 -->
+        <div v-if="!userStore.isAdmin && canDelete(currentPost)" class="user-actions">
+          <el-button type="danger" size="small" @click="handleDelete(currentPost)">
+            <el-icon><Delete /></el-icon>
+            删除
+          </el-button>
         </div>
 
         <div class="comments-section">
@@ -205,14 +230,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Plus, User, Clock, ChatDotRound, ChatLineSquare, Upload, Star, Document,
+  Plus, User, Clock, ChatDotRound, ChatLineSquare, Upload, Star, Document, Delete,
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import {
   getForumPosts, createForumPost, getForumPostDetail,
   createForumComment, getAdminForumPosts, reviewForumPost, togglePinPost,
+  deleteForumPost, adminDeleteForumPost,
 } from '../api/forum'
 
 const userStore = useUserStore()
@@ -361,6 +387,34 @@ async function handleTogglePin() {
       // refresh list
       if (activeTab.value === 'pending') loadAdminPosts()
       else loadPosts()
+    }
+  } catch { /* ignore */ }
+}
+
+function canDelete(post) {
+  if (!post) return false
+  return userStore.isAdmin || post.username === userStore.userInfo?.username
+}
+
+async function handleDelete(post) {
+  try {
+    await ElMessageBox.confirm('确定要删除这条帖子吗？此操作不可撤销。', '删除确认', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch { return }
+
+  try {
+    const res = userStore.isAdmin
+      ? await adminDeleteForumPost(post.id)
+      : await deleteForumPost(post.id)
+    if (res.success) {
+      ElMessage.success('帖子已删除')
+      showDetailDialog.value = false
+      if (activeTab.value === 'pending') loadAdminPosts()
+      else loadPosts()
+      loadPendingCount()
     }
   } catch { /* ignore */ }
 }
@@ -652,6 +706,23 @@ onMounted(() => {
   border-bottom: 1px solid var(--border-color);
   display: flex;
   gap: 8px;
+}
+.user-actions {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+.post-delete-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.post-card:hover .post-delete-btn {
+  opacity: 1;
 }
 
 .comments-section {

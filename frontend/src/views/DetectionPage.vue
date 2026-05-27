@@ -30,7 +30,10 @@
           <div class="settings-row">
             <span class="settings-label">检测模型</span>
             <el-select v-model="selectedModel" size="small" style="width: 100%" @change="handleModelSwitch" :loading="modelsLoading">
-              <el-option v-for="m in availableModels" :key="m.filename" :label="m.display_name || `${m.version} (${m.size_mb}MB)`" :value="m.filename" />
+              <el-option v-for="m in availableModels" :key="m.filename" :label="m.display_name || m.filename" :value="m.filename">
+                <span>{{ m.display_name || m.filename }}</span>
+                <span v-if="m.description" class="model-option-desc">{{ m.description }}</span>
+              </el-option>
             </el-select>
           </div>
           <div class="settings-row">
@@ -138,7 +141,9 @@
             <DetectionPanel
               :modelStatus="modelStatus"
               :detectionResult="detectionResult"
+              :selectedName="popoverSelectedName"
               @redetect="resetDetection"
+              @select-pest="handleSelectPest"
             />
           </div>
         </template>
@@ -178,7 +183,7 @@
               <template v-else>
                 <div class="result-header">
                   <span class="result-title">视频检测结果</span>
-                  <el-button size="small" text @click="videoResult = null">
+                  <el-button size="small" text @click="videoResult = null; if (videoInputRef) videoInputRef.value = ''">
                     <el-icon><RefreshLeft /></el-icon>重新检测
                   </el-button>
                 </div>
@@ -228,29 +233,97 @@
             <DetectionPanel
               :modelStatus="modelStatus"
               :detectionResult="videoPanelResult"
+              :selectedName="popoverSelectedName"
               @redetect="videoResult = null"
+              @select-pest="handleSelectPest"
+            />
+          </div>
+        </template>
+
+        <!-- 实时摄像头检测模式 -->
+        <template v-if="activeMode === 'camera'">
+          <div class="result-layout">
+            <div class="result-left">
+              <div class="camera-view">
+                <div class="camera-container">
+                  <video ref="cameraVideoRef" class="camera-video" :class="{ hidden: !cameraActive }" autoplay playsinline muted />
+                  <canvas ref="cameraCanvasRef" class="camera-overlay" :class="{ hidden: !cameraActive }" />
+                  <div v-if="cameraActive" class="camera-hud">
+                    <span class="hud-item fps">FPS {{ cameraFps }}</span>
+                    <span class="hud-item">间隔 {{ DETECT_INTERVAL }}ms</span>
+                    <span class="hud-item">{{ cameraObjCount }} targets</span>
+                    <span class="hud-item">{{ (confidence * 100).toFixed(0) }}%</span>
+                    <span v-if="cameraStats.detection_time" class="hud-item">{{ (cameraStats.detection_time * 1000).toFixed(0) }}ms</span>
+                  </div>
+                  <div v-if="cameraActive" class="camera-rec-dot" />
+                  <div v-if="!cameraActive" class="camera-placeholder">
+                    <div class="camera-placeholder-icon">
+                      <el-icon :size="48"><Camera /></el-icon>
+                    </div>
+                    <p class="camera-placeholder-text">点击按钮开启摄像头实时检测</p>
+                    <p class="camera-placeholder-hint">系统将逐帧捕获画面并识别病虫害</p>
+                  </div>
+                </div>
+                <div class="camera-controls">
+                  <el-button
+                    v-if="!cameraActive"
+                    type="primary"
+                    size="large"
+                    @click="startCamera"
+                  >
+                    <el-icon><Camera /></el-icon>
+                    开启摄像头
+                  </el-button>
+                  <el-button
+                    v-else
+                    type="danger"
+                    size="large"
+                    @click="stopCamera"
+                  >
+                    关闭摄像头
+                  </el-button>
+                </div>
+              </div>
+            </div>
+            <DetectionPanel
+              :modelStatus="modelStatus"
+              :detectionResult="cameraPanelResult"
+              :selectedName="popoverSelectedName"
+              @select-pest="handleSelectPest"
             />
           </div>
         </template>
       </div>
     </div>
+    <PestDetailPopover
+      v-if="popoverPest"
+      :pest="popoverPest"
+      :visible="popoverVisible"
+      @close="popoverVisible = false"
+      @go-guide="handleGoGuide"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import { ElMessage, ElLoading } from "element-plus";
 import {
   UploadFilled, Picture, Plus, VideoCamera, Setting,
-  RefreshLeft, ArrowLeft, ArrowRight, WarningFilled,
+  RefreshLeft, ArrowLeft, ArrowRight, WarningFilled, Camera,
 } from "@element-plus/icons-vue";
-import { detectSingleImage, detectBatchImages, detectVideo, getModels, getModelStatus, switchModel } from "../api/detection";
+import { detectSingleImage, detectBatchImages, detectVideo, detectFrame, getModels, getModelStatus, switchModel, getPestList } from "../api/detection";
 import ImageCompare from "../components/ImageCompare.vue";
 import DetectionPanel from "../components/DetectionPanel.vue";
+import PestDetailPopover from "../components/PestDetailPopover.vue";
+
+const router = useRouter();
 
 const modes = [
   { key: "image", label: "图片检测", icon: Picture },
   { key: "video", label: "视频检测", icon: VideoCamera },
+  { key: "camera", label: "实时检测", icon: Camera },
 ];
 
 const activeMode = ref("image");
@@ -276,7 +349,9 @@ const videoPanelResult = computed(() => {
   if (!videoResult.value) return null;
   const v = videoResult.value;
   const boxes = Object.entries(v.summary || {}).map(([class_name, count]) => ({
-    class_name: `${class_name} (${count}次)`,
+    class_name,
+    chinese_name: class_name,
+    count,
     confidence: 1,
   }));
   return {
@@ -286,9 +361,64 @@ const videoPanelResult = computed(() => {
   };
 });
 
+// 累积物种清单（仅添加模式，每 5s 更新一次最高置信度）
+const cameraSpeciesMap = ref({});
+const SPECIES_UPDATE_INTERVAL = 5000;
+let _speciesTimerId = null;
+
+function mergeSpeciesFromBoxes(boxes) {
+  const map = { ...cameraSpeciesMap.value };
+  for (const box of boxes) {
+    const key = box.class_id ?? box.class_name;
+    if (!map[key] || box.confidence > map[key].confidence) {
+      map[key] = {
+        class_id: box.class_id,
+        class_name: box.class_name,
+        chinese_name: box.chinese_name || "",
+        confidence: box.confidence,
+      };
+    }
+  }
+  cameraSpeciesMap.value = map;
+}
+
+const cameraPanelResult = computed(() => {
+  if (!cameraActive.value) return null;
+  const species = Object.values(cameraSpeciesMap.value);
+  if (species.length === 0) {
+    return { total_objects: 0, detection_time: 0, boxes: [] };
+  }
+  return {
+    total_objects: species.length,
+    detection_time: cameraStats.value.detection_time,
+    boxes: species.sort((a, b) => b.confidence - a.confidence),
+  };
+});
+
 const singleInputRef = ref(null);
 const batchInputRef = ref(null);
 const videoInputRef = ref(null);
+
+// 摄像头实时检测
+const cameraActive = ref(false);
+const cameraStream = ref(null);
+const cameraVideoRef = ref(null);
+const cameraCanvasRef = ref(null);
+const cameraBoxes = ref([]);
+const cameraStats = ref({ total_objects: 0, detection_time: 0, class_summary: {} });
+const cameraLoopId = ref(null);
+const cameraFps = ref(0);
+const cameraObjCount = ref(0);
+let _fpsFrames = [];
+// 平滑稳定
+let _smoothBoxes = [];       // 平滑后的框
+let _lastDetectTime = 0;     // 上次成功检测时间
+let _detectRunning = false;  // 防止并发
+let _consecutiveErrors = 0;  // 连续错误计数
+let _cameraLoopActive = false;
+const SMOOTH_ALPHA = 0.35;   // EMA 平滑系数（越小越平滑）
+const PERSIST_MS = 1200;     // 框滞留时间（ms）
+const DETECT_INTERVAL = 500; // 检测间隔（ms）
 
 const loadModels = async () => {
   try {
@@ -306,6 +436,41 @@ const loadModels = async () => {
     modelsLoading.value = false;
   }
 };
+
+// 图鉴数据
+const pestDatabase = ref([]);
+
+async function loadPestData() {
+  try {
+    const res = await getPestList();
+    if (res.success) pestDatabase.value = res.data;
+  } catch (e) {
+    console.error("加载图鉴数据失败:", e);
+  }
+}
+
+// 图鉴浮窗
+const popoverVisible = ref(false);
+const popoverPest = ref(null);
+const popoverSelectedName = ref(null);
+
+function handleSelectPest(name) {
+  const match = pestDatabase.value.find(
+    p => p.name === name || p.chinese_name === name
+  );
+  if (match) {
+    popoverPest.value = match;
+    popoverSelectedName.value = name;
+    popoverVisible.value = true;
+  } else {
+    ElMessage.info("未找到该物种的图鉴信息");
+  }
+}
+
+function handleGoGuide() {
+  popoverVisible.value = false;
+  router.push("/guide");
+}
 
 const handleModelSwitch = async (filename) => {
   try {
@@ -393,6 +558,7 @@ const performBatchDetection = async (files) => {
   const loading = ElLoading.service({ lock: true, text: `批量检测 ${files.length} 张图片...`, background: "rgba(0,0,0,0.7)" });
   try {
     isDetecting.value = true;
+    resetDetection();
     const formData = new FormData();
     files.forEach(f => formData.append("files", f));
     formData.append("model_name", selectedModel.value);
@@ -455,8 +621,301 @@ const performVideoDetection = async (file) => {
   }
 };
 
-onMounted(loadModels);
-onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.value); });
+onMounted(() => { loadModels(); loadPestData(); });
+onUnmounted(() => {
+  if (originalImage.value) URL.revokeObjectURL(originalImage.value);
+  stopCamera();
+});
+
+// === 摄像头实时检测 ===
+const startCamera = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        frameRate: { ideal: 30 },
+        facingMode: "environment",
+      },
+    });
+    cameraStream.value = stream;
+    cameraActive.value = true;
+    cameraBoxes.value = [];
+    cameraStats.value = { total_objects: 0, detection_time: 0, class_summary: {} };
+    cameraSpeciesMap.value = {};
+    _smoothBoxes = [];
+    _fpsFrames = [];
+    _detectRunning = false;
+    _consecutiveErrors = 0;
+    await new Promise(r => setTimeout(r, 200));
+    if (cameraVideoRef.value) {
+      cameraVideoRef.value.srcObject = stream;
+      cameraVideoRef.value.play();
+    }
+    _cameraLoopActive = true;
+    // 检测循环：固定 500ms 间隔（实时框绘制）
+    cameraLoopId.value = setInterval(runFrameDetection, DETECT_INTERVAL);
+    // 物种清单更新：每 5 秒合并一次
+    _speciesTimerId = setInterval(() => {
+      if (_smoothBoxes.length > 0) mergeSpeciesFromBoxes(_smoothBoxes);
+    }, SPECIES_UPDATE_INTERVAL);
+    // 获取摄像头实际帧率
+    const videoTrack = stream.getVideoTracks()[0];
+    const trackSettings = videoTrack.getSettings();
+    cameraFps.value = trackSettings.frameRate || 30;
+    // 绘制循环
+    requestAnimationFrame(renderLoop);
+  } catch (e) {
+    handleCameraError(e);
+  }
+};
+
+const stopCamera = () => {
+  _cameraLoopActive = false;
+  if (cameraLoopId.value) { clearInterval(cameraLoopId.value); cameraLoopId.value = null; }
+  if (_speciesTimerId) { clearInterval(_speciesTimerId); _speciesTimerId = null; }
+  if (cameraStream.value) { cameraStream.value.getTracks().forEach(t => t.stop()); cameraStream.value = null; }
+  cameraActive.value = false;
+  cameraBoxes.value = [];
+  cameraFps.value = 0;
+  cameraObjCount.value = 0;
+  _smoothBoxes = [];
+  _fpsFrames = [];
+  _detectRunning = false;
+  _consecutiveErrors = 0;
+};
+
+const handleCameraError = (error) => {
+  console.error("摄像头错误:", error);
+  switch (error.name) {
+    case "NotAllowedError":
+      ElMessage.error("摄像头权限被拒绝，请在浏览器设置中允许访问摄像头");
+      break;
+    case "NotFoundError":
+      ElMessage.error("未检测到摄像头设备，请检查设备连接");
+      break;
+    case "NotReadableError":
+      ElMessage.error("摄像头被其他应用占用，请关闭其他应用后重试");
+      break;
+    case "OverconstrainedError":
+      ElMessage.error("摄像头不支持当前分辨率设置");
+      break;
+    default:
+      ElMessage.error("无法访问摄像头，请检查设备和权限设置");
+  }
+  stopCamera();
+};
+
+// 前端绘制用渲染循环（rAF，持续绘制不断刷新画面和框）
+let _renderActive = false;
+function renderLoop() {
+  if (!cameraActive.value) { _renderActive = false; return; }
+  _renderActive = true;
+  drawCameraBoxes();
+  requestAnimationFrame(renderLoop);
+}
+
+// EMA 平滑：将新旧框按类别匹配，平滑坐标
+function smoothUpdate(newBoxes) {
+  const now = performance.now();
+  const result = [];
+
+  for (const nb of newBoxes) {
+    // 查找最近的旧框（同类且 IoU > 0.3）
+    let best = null, bestIoU = 0;
+    for (const ob of _smoothBoxes) {
+      if (ob.class_id !== nb.class_id) continue;
+      const iou = computeIoU(nb, ob);
+      if (iou > bestIoU) { bestIoU = iou; best = ob; }
+    }
+
+    if (best && bestIoU > 0.3) {
+      // EMA 平滑坐标
+      result.push({
+        x1: best.x1 + (nb.x1 - best.x1) * SMOOTH_ALPHA,
+        y1: best.y1 + (nb.y1 - best.y1) * SMOOTH_ALPHA,
+        x2: best.x2 + (nb.x2 - best.x2) * SMOOTH_ALPHA,
+        y2: best.y2 + (nb.y2 - best.y2) * SMOOTH_ALPHA,
+        confidence: best.confidence + (nb.confidence - best.confidence) * SMOOTH_ALPHA,
+        class_id: nb.class_id,
+        class_name: nb.class_name,
+        chinese_name: nb.chinese_name || best.chinese_name || "",
+        lastSeen: now,
+      });
+    } else {
+      result.push({ ...nb, lastSeen: now });
+    }
+  }
+
+  // 保留滞留框（新帧没检测到但还在 PERSIST_MS 内）
+  for (const ob of _smoothBoxes) {
+    if (now - ob.lastSeen < PERSIST_MS) {
+      const dominated = result.some(nb => nb.class_id === ob.class_id && computeIoU(nb, ob) > 0.3);
+      if (!dominated) result.push(ob);
+    }
+  }
+
+  _smoothBoxes = result;
+  cameraBoxes.value = result;
+  cameraObjCount.value = result.length;
+}
+
+function computeIoU(a, b) {
+  const ix1 = Math.max(a.x1, b.x1), iy1 = Math.max(a.y1, b.y1);
+  const ix2 = Math.min(a.x2, b.x2), iy2 = Math.min(a.y2, b.y2);
+  const inter = Math.max(0, ix2 - ix1) * Math.max(0, iy2 - iy1);
+  const ua = (a.x2 - a.x1) * (a.y2 - a.y1) + (b.x2 - b.x1) * (b.y2 - b.y1) - inter;
+  return ua > 0 ? inter / ua : 0;
+}
+
+const MAX_CONSECUTIVE_ERRORS = 5;
+// 复用离屏 canvas，避免每帧创建新元素
+const _offscreenCanvas = document.createElement("canvas");
+const _offscreenCtx = _offscreenCanvas.getContext("2d");
+
+const runFrameDetection = async () => {
+  if (!cameraVideoRef.value || !cameraActive.value || _detectRunning) return;
+  _detectRunning = true;
+  const now = performance.now();
+
+  try {
+    const video = cameraVideoRef.value;
+    if (!video.videoWidth || !video.videoHeight) { _detectRunning = false; return; }
+    // 降采样给后端：显示 640x480，上传 320x240
+    _offscreenCanvas.width = Math.round(video.videoWidth / 2);
+    _offscreenCanvas.height = Math.round(video.videoHeight / 2);
+    _offscreenCtx.drawImage(video, 0, 0, _offscreenCanvas.width, _offscreenCanvas.height);
+    const blob = await new Promise(r => _offscreenCanvas.toBlob(r, "image/jpeg", 0.5));
+    if (!blob) { _detectRunning = false; return; }
+
+    const formData = new FormData();
+    formData.append("file", blob, "frame.jpg");
+    formData.append("model_name", selectedModel.value);
+    formData.append("conf", confidence.value);
+    const res = await detectFrame(formData);
+    if (res.success && res.data) {
+      cameraStats.value = res.data;
+      _lastDetectTime = now;
+      _consecutiveErrors = 0;
+      smoothUpdate(res.data.boxes);
+    } else {
+      _consecutiveErrors++;
+    }
+  } catch {
+    _consecutiveErrors++;
+  }
+
+  // 连续错误超过阈值自动停止
+  if (_consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+    ElMessage.error("检测连续失败，请检查网络或模型状态");
+    stopCamera();
+  }
+
+  _detectRunning = false;
+};
+
+const COLORS = [
+  "#48d1ad", "#327fe9", "#2ec76a", "#8a57e8", "#22b2e5",
+  "#39c7ba", "#e86f30", "#8360e8", "#d5534f", "#3285e8",
+  "#5cb84d", "#e39c25", "#4285f4", "#78b834", "#d94437",
+  "#f4b400", "#ab47bc", "#00acc1", "#ff7043", "#7cb942",
+];
+
+const drawCameraBoxes = () => {
+  if (!cameraVideoRef.value || !cameraCanvasRef.value) return;
+  const video = cameraVideoRef.value;
+  const canvas = cameraCanvasRef.value;
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const vw = canvas.width;
+  const vh = canvas.height;
+  // 后端处理的是半分辨率，坐标需 ×2 映射回显示分辨率
+  const scaleX = vw / Math.round(vw / 2);
+  const scaleY = vh / Math.round(vh / 2);
+  const lw = Math.max(2, Math.min(vw, vh) / 300);
+  const fontSize = Math.max(12, Math.min(vw, vh) / 45);
+
+  for (const box of cameraBoxes.value) {
+    const x1 = box.x1 * scaleX, y1 = box.y1 * scaleY;
+    const x2 = box.x2 * scaleX, y2 = box.y2 * scaleY;
+    const color = COLORS[box.class_id % COLORS.length];
+
+    // 半透明填充
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = color;
+    ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.globalAlpha = 1;
+
+    // 圆角边框
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.setLineDash([]);
+    roundRect(ctx, x1, y1, x2 - x1, y2 - y1, 10);
+    ctx.stroke();
+
+    // 四角加粗装饰线
+    const cl = Math.max(14, Math.min(x2 - x1, y2 - y1) * 0.18);
+    ctx.lineWidth = lw + 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1 + cl); ctx.lineTo(x1, y1); ctx.lineTo(x1 + cl, y1);
+    ctx.moveTo(x2 - cl, y1); ctx.lineTo(x2, y1); ctx.lineTo(x2, y1 + cl);
+    ctx.moveTo(x1, y2 - cl); ctx.lineTo(x1, y2); ctx.lineTo(x1 + cl, y2);
+    ctx.moveTo(x2 - cl, y2); ctx.lineTo(x2, y2); ctx.lineTo(x2, y2 - cl);
+    ctx.stroke();
+
+    // 底部置信度条
+    const barH = 4;
+    const barW = (x2 - x1) * box.confidence;
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(x1, y2 - barH, x2 - x1, barH);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = color;
+    ctx.fillRect(x1, y2 - barH, barW, barH);
+
+    // 标签（带阴影）
+    const label = `${box.class_name} ${(box.confidence * 100).toFixed(0)}%`;
+    ctx.font = `600 ${fontSize}px sans-serif`;
+    const tw = ctx.measureText(label).width + 14;
+    const th = fontSize + 12;
+    let lx = x1, ly = y1 - th - 2;
+    if (ly < 0) ly = y2 + 2;
+
+    // 阴影
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.roundRect(lx + 2, ly + 2, tw, th, 6);
+    ctx.fill();
+    // 背景
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, tw, th, 6);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    // 文字
+    ctx.fillStyle = "#fff";
+    ctx.fillText(label, lx + 7, ly + th - 5);
+  }
+};
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
 </script>
 
 <style scoped>
@@ -563,6 +1022,7 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .model-info-item:last-child { border-bottom: none; }
 .model-info-label { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
 .model-info-value { font-size: 12px; font-weight: 500; color: var(--text-primary); text-align: right; margin-left: 8px; }
+.model-option-desc { font-size: 11px; color: var(--text-secondary); margin-left: 8px; }
 .model-info-value.model-path { font-size: 11px; word-break: break-all; }
 
 /* === 上传区域 === */
@@ -628,4 +1088,53 @@ onUnmounted(() => { if (originalImage.value) URL.revokeObjectURL(originalImage.v
 .key-frames { margin-top: 14px; }
 .kf-list { display: flex; gap: 6px; flex-wrap: wrap; }
 .kf-img { width: 72px; height: 52px; border-radius: 6px; cursor: pointer; }
+
+/* === 实时摄像头 === */
+.camera-view { display: flex; flex-direction: column; gap: 16px; }
+.camera-container {
+  position: relative; width: 100%; aspect-ratio: 4/3;
+  border-radius: 12px; overflow: hidden; background: #1a1a2e;
+}
+.camera-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camera-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+}
+.camera-placeholder {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #a0a0b8;
+}
+.camera-placeholder-icon {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.camera-placeholder-text { font-size: 15px; color: #d0d0e0; margin: 0 0 4px 0; }
+.camera-placeholder-hint { font-size: 12px; color: #8080a0; margin: 0; }
+.camera-controls { display: flex; justify-content: center; }
+.hidden { display: none; }
+
+/* 摄像头 HUD */
+.camera-hud {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; gap: 8px; z-index: 10;
+}
+.hud-item {
+  padding: 4px 10px; border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6); color: #e0e0e0;
+  font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(4px);
+}
+.hud-item.fps { color: #4ade80; font-weight: 700; }
+.camera-rec-dot {
+  position: absolute; top: 14px; right: 14px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #ef4444; animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 </style>

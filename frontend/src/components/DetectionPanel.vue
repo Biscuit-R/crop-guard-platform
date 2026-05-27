@@ -5,6 +5,7 @@
         <div class="card-header">
           <el-icon><List /></el-icon>
           <span class="card-title">识别清单</span>
+          <span v-if="detectionResult?.boxes?.length > 0" class="card-hint">点击物种查看详情</span>
         </div>
         <div v-if="!detectionResult || detectionResult.total_objects === 0" class="empty-state">
           <el-icon class="empty-icon"><CircleCheck /></el-icon>
@@ -12,9 +13,16 @@
           <p class="empty-desc">请上传农作物图片开始检测</p>
         </div>
         <div v-else class="detection-list">
-          <div v-for="(box, index) in detectionResult.boxes" :key="index" class="detection-item">
-            <span class="item-name">{{ box.class_name }}</span>
-            <span class="item-confidence">{{ (box.confidence * 100).toFixed(1) }}%</span>
+          <div
+            v-for="(sp, index) in uniqueSpecies"
+            :key="sp.class_id ?? index"
+            class="detection-item"
+            :class="{ active: selectedName && selectedName === sp.class_name }"
+            @click="$emit('select-pest', sp.class_name)"
+          >
+            <span class="item-name">{{ sp.chinese_name }}</span>
+            <span v-if="sp.count > 1" class="item-count">{{ sp.count }}只</span>
+            <span class="item-confidence">{{ (sp.maxConf * 100).toFixed(1) }}%</span>
           </div>
         </div>
       </div>
@@ -28,7 +36,7 @@
           <p v-if="!detectionResult">上传图片后将自动生成诊断建议</p>
           <p v-else>
             检测到 {{ detectionResult.total_objects }} 个病虫害目标，耗时 {{ detectionResult.detection_time }}s。
-            模型: {{ modelStatus.model_version }}
+            模型: {{ modelStatus.model_version || '-' }}
           </p>
         </div>
       </div>
@@ -48,14 +56,37 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { List, CircleCheck, ChatDotRound, Refresh, Document } from "@element-plus/icons-vue";
 
-defineProps({
+const props = defineProps({
   modelStatus: { type: Object, default: () => ({}) },
   detectionResult: { type: Object, default: null },
+  selectedName: { type: String, default: null },
 });
 
-defineEmits(["redetect"]);
+defineEmits(["redetect", "select-pest"]);
+
+const uniqueSpecies = computed(() => {
+  if (!props.detectionResult?.boxes?.length) return [];
+  const map = {};
+  for (const box of props.detectionResult.boxes) {
+    const key = box.class_id ?? box.class_name;
+    if (!map[key]) {
+      map[key] = {
+        class_name: box.class_name,
+        chinese_name: box.chinese_name || box.class_name,
+        count: box.count || 1,
+        maxConf: box.confidence,
+        class_id: box.class_id,
+      };
+    } else {
+      map[key].count += box.count || 1;
+      map[key].maxConf = Math.max(map[key].maxConf, box.confidence);
+    }
+  }
+  return Object.values(map).sort((a, b) => b.maxConf - a.maxConf);
+});
 </script>
 
 <style scoped>
@@ -82,6 +113,7 @@ defineEmits(["redetect"]);
 .card-header { display: flex; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
 .card-header .el-icon { font-size: 15px; color: var(--primary-color); margin-right: 6px; }
 .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.card-hint { font-size: 11px; color: var(--text-secondary); margin-left: auto; }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
 .empty-icon { font-size: 28px; color: var(--success-color); margin-bottom: 6px; animation: pulse-glow 2.5s ease-in-out infinite; }
@@ -91,7 +123,7 @@ defineEmits(["redetect"]);
 .detection-list { display: flex; flex-direction: column; gap: 4px; flex: 1; min-height: 0; overflow-y: auto; }
 .detection-item {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 5px 10px; background-color: #f9fafb; border-radius: 6px;
+  padding: 5px 10px; background-color: #f9fafb; border-radius: 6px; cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s var(--ease-out-expo);
   animation: fade-in 0.6s var(--ease-out-expo) both;
 }
@@ -101,9 +133,11 @@ defineEmits(["redetect"]);
 .detection-item:nth-child(4) { animation-delay: 0.6s; }
 .detection-item:nth-child(5) { animation-delay: 0.7s; }
 .detection-item:hover { background-color: #fef9ef; transform: translateX(2px); }
+.detection-item.active { background-color: #fef3c7; border-left: 3px solid var(--primary-color); }
 
 .item-name { font-size: 13px; color: var(--text-primary); }
 .item-confidence { font-size: 12px; font-weight: 500; color: var(--primary-color); }
+.item-count { font-size: 12px; font-weight: 600; color: #8b5cf6; }
 
 .diagnosis-content { font-size: 12px; color: var(--text-secondary); line-height: 1.5; flex: 1; min-height: 0; overflow-y: auto; }
 .diagnosis-content p { margin: 0; }
