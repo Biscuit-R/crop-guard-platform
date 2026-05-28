@@ -65,6 +65,11 @@
 
       <!-- 检测内容区 -->
       <div class="content-area">
+        <!-- 文件输入（始终渲染，确保 ref 始终有效） -->
+        <input ref="singleInputRef" type="file" accept="image/*" class="hidden-input" @change="e => handleFileChange(e, 'single')" />
+        <input ref="batchInputRef" type="file" accept="image/*" multiple class="hidden-input" @change="e => handleFileChange(e, 'batch')" />
+        <input ref="videoInputRef" type="file" accept="video/*" class="hidden-input" @change="e => handleFileChange(e, 'video')" />
+
         <!-- 图片检测模式 -->
         <template v-if="activeMode === 'image'">
           <div class="result-layout">
@@ -94,8 +99,6 @@
                         <el-icon><Plus /></el-icon>批量检测
                       </el-button>
                     </div>
-                    <input ref="singleInputRef" type="file" accept="image/*" class="hidden-input" @change="e => handleFileChange(e, 'single')" />
-                    <input ref="batchInputRef" type="file" accept="image/*" multiple class="hidden-input" @change="e => handleFileChange(e, 'batch')" />
                   </div>
                 </div>
               </div>
@@ -104,8 +107,8 @@
               <template v-else>
                 <div class="result-header">
                   <span class="result-title">检测结果</span>
-                  <el-button size="small" text @click="resetDetection">
-                    <el-icon><RefreshLeft /></el-icon>重新检测
+                  <el-button size="small" text @click="triggerUpload('single')">
+                    <el-icon><RefreshLeft /></el-icon>更换图片
                   </el-button>
                 </div>
                 <ImageCompare
@@ -142,7 +145,9 @@
               :modelStatus="modelStatus"
               :detectionResult="detectionResult"
               :selectedName="popoverSelectedName"
-              @redetect="resetDetection"
+              mode="image"
+              @redetect="handleRedetect"
+              @generate-report="handleGenerateReport"
               @select-pest="handleSelectPest"
             />
           </div>
@@ -174,7 +179,6 @@
                         <el-icon><VideoCamera /></el-icon>选择视频
                       </el-button>
                     </div>
-                    <input ref="videoInputRef" type="file" accept="video/*" class="hidden-input" @change="e => handleFileChange(e, 'video')" />
                   </div>
                 </div>
               </div>
@@ -183,8 +187,8 @@
               <template v-else>
                 <div class="result-header">
                   <span class="result-title">视频检测结果</span>
-                  <el-button size="small" text @click="videoResult = null; if (videoInputRef) videoInputRef.value = ''">
-                    <el-icon><RefreshLeft /></el-icon>重新检测
+                  <el-button size="small" text @click="triggerUpload('video')">
+                    <el-icon><RefreshLeft /></el-icon>更换视频
                   </el-button>
                 </div>
                 <video :src="videoResult.result_video_url" controls class="result-video" />
@@ -234,7 +238,9 @@
               :modelStatus="modelStatus"
               :detectionResult="videoPanelResult"
               :selectedName="popoverSelectedName"
-              @redetect="videoResult = null"
+              mode="video"
+              @redetect="handleRedetect"
+              @generate-report="handleGenerateReport"
               @select-pest="handleSelectPest"
             />
           </div>
@@ -250,7 +256,7 @@
                   <canvas ref="cameraCanvasRef" class="camera-overlay" :class="{ hidden: !cameraActive }" />
                   <div v-if="cameraActive" class="camera-hud">
                     <span class="hud-item fps">FPS {{ cameraFps }}</span>
-                    <span class="hud-item">间隔 {{ DETECT_INTERVAL }}ms</span>
+                    <span class="hud-item">间隔 300ms</span>
                     <span class="hud-item">{{ cameraObjCount }} targets</span>
                     <span class="hud-item">{{ (confidence * 100).toFixed(0) }}%</span>
                     <span v-if="cameraStats.detection_time" class="hud-item">{{ (cameraStats.detection_time * 1000).toFixed(0) }}ms</span>
@@ -289,6 +295,8 @@
               :modelStatus="modelStatus"
               :detectionResult="cameraPanelResult"
               :selectedName="popoverSelectedName"
+              mode="camera"
+              @generate-report="handleGenerateReport"
               @select-pest="handleSelectPest"
             />
           </div>
@@ -302,6 +310,71 @@
       @close="popoverVisible = false"
       @go-guide="handleGoGuide"
     />
+
+    <!-- 报告弹窗 -->
+    <el-dialog v-model="reportVisible" title="检测报告" width="640px" destroy-on-close>
+      <div v-if="reportData" class="report-content">
+        <div class="report-header">
+          <span class="report-mode">{{ { image: '图片检测', video: '视频检测', camera: '实时检测' }[reportData.mode] }}</span>
+          <span class="report-model">模型: {{ reportData.model_version }}</span>
+        </div>
+
+        <!-- 图片模式报告 -->
+        <template v-if="reportData.mode === 'image'">
+          <div class="report-images">
+            <div class="report-img-box">
+              <span class="report-img-label">原图</span>
+              <img :src="reportData.original_image" class="report-img" />
+            </div>
+            <div class="report-img-box">
+              <span class="report-img-label">检测结果</span>
+              <img :src="reportData.result_image" class="report-img" />
+            </div>
+          </div>
+        </template>
+
+        <!-- 视频模式报告 -->
+        <template v-if="reportData.mode === 'video'">
+          <video :src="reportData.result_video" controls class="report-video" />
+          <div class="report-stats">
+            <div class="report-stat"><span class="rs-val">{{ reportData.total_objects }}</span><span class="rs-label">检测目标</span></div>
+            <div class="report-stat"><span class="rs-val">{{ reportData.processed_frames }}</span><span class="rs-label">处理帧数</span></div>
+            <div class="report-stat"><span class="rs-val">{{ reportData.duration }}s</span><span class="rs-label">视频时长</span></div>
+            <div class="report-stat"><span class="rs-val">{{ reportData.detection_time }}s</span><span class="rs-label">检测耗时</span></div>
+          </div>
+          <div v-if="Object.keys(reportData.summary).length" class="report-summary">
+            <div class="report-section-title">病虫害统计</div>
+            <div v-for="(count, name) in reportData.summary" :key="name" class="report-summary-item">
+              <span>{{ name }}</span><span class="report-summary-count">{{ count }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- 摄像头模式报告 -->
+        <template v-if="reportData.mode === 'camera'">
+          <div class="report-stats">
+            <div class="report-stat"><span class="rs-val">{{ reportData.total_objects }}</span><span class="rs-label">累积物种</span></div>
+            <div class="report-stat"><span class="rs-val">{{ reportData.detection_time ? (reportData.detection_time * 1000).toFixed(0) + 'ms' : '-' }}</span><span class="rs-label">检测耗时</span></div>
+          </div>
+        </template>
+
+        <!-- 物种清单 -->
+        <div v-if="reportData.boxes?.length" class="report-species">
+          <div class="report-section-title">识别物种清单</div>
+          <div v-for="(box, i) in reportData.boxes" :key="i" class="report-species-item">
+            <span class="rs-name">{{ box.chinese_name || box.class_name }}</span>
+            <span class="rs-conf">{{ (box.confidence * 100).toFixed(1) }}%</span>
+          </div>
+        </div>
+
+        <div class="report-footer">
+          <span>检测时间: {{ new Date().toLocaleString('zh-CN') }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="reportVisible = false; $router.push('/history')">查看检测记录</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -340,6 +413,8 @@ const modelStatus = ref({});
 const originalImage = ref("");
 const resultImage = ref("");
 const detectionResult = ref(null);
+const lastImageFile = ref(null); // 用于重新检测
+const lastVideoFile = ref(null);
 const batchResults = ref([]);
 const batchFiles = ref([]);
 const currentIndex = ref(0);
@@ -416,9 +491,9 @@ let _lastDetectTime = 0;     // 上次成功检测时间
 let _detectRunning = false;  // 防止并发
 let _consecutiveErrors = 0;  // 连续错误计数
 let _cameraLoopActive = false;
-const SMOOTH_ALPHA = 0.35;   // EMA 平滑系数（越小越平滑）
-const PERSIST_MS = 1200;     // 框滞留时间（ms）
-const DETECT_INTERVAL = 500; // 检测间隔（ms）
+const SMOOTH_ALPHA = 0.6;    // EMA 平滑系数（越大越灵敏）
+const PERSIST_MS = 600;      // 框滞留时间（ms）
+const DETECT_INTERVAL = 300; // 检测间隔（ms）
 
 const loadModels = async () => {
   try {
@@ -464,6 +539,68 @@ function handleSelectPest(name) {
     popoverVisible.value = true;
   } else {
     ElMessage.info("未找到该物种的图鉴信息");
+  }
+}
+
+// 报告弹窗
+const reportVisible = ref(false);
+const reportData = ref(null);
+
+function handleGenerateReport() {
+  let data = null;
+  if (activeMode.value === 'image' && detectionResult.value) {
+    data = {
+      mode: 'image',
+      filename: detectionResult.value.filename || '单图检测',
+      original_image: originalImage.value,
+      result_image: resultImage.value,
+      total_objects: detectionResult.value.total_objects,
+      detection_time: detectionResult.value.detection_time,
+      boxes: detectionResult.value.boxes || [],
+      model_version: modelStatus.value.model_version || '-',
+    };
+  } else if (activeMode.value === 'video' && videoResult.value) {
+    data = {
+      mode: 'video',
+      filename: '视频检测',
+      result_video: videoResult.value.result_video_url,
+      total_objects: videoResult.value.total_objects,
+      duration: videoResult.value.duration,
+      fps: videoResult.value.fps,
+      processed_frames: videoResult.value.processed_frames,
+      detection_time: videoResult.value.detection_time,
+      summary: videoResult.value.summary || {},
+      key_frames: videoResult.value.key_frames || [],
+      model_version: modelStatus.value.model_version || '-',
+    };
+  } else if (activeMode.value === 'camera' && cameraActive.value) {
+    const species = Object.values(cameraSpeciesMap.value);
+    data = {
+      mode: 'camera',
+      filename: '实时检测',
+      total_objects: species.length,
+      detection_time: cameraStats.value.detection_time,
+      boxes: species,
+      model_version: modelStatus.value.model_version || '-',
+    };
+  }
+
+  if (!data) {
+    ElMessage.warning('暂无检测结果，请先进行检测');
+    return;
+  }
+
+  reportData.value = data;
+  reportVisible.value = true;
+}
+
+function handleRedetect() {
+  if (activeMode.value === 'image' && lastImageFile.value) {
+    performSingleDetection(lastImageFile.value);
+  } else if (activeMode.value === 'video' && lastVideoFile.value) {
+    performVideoDetection(lastVideoFile.value);
+  } else {
+    ElMessage.warning('暂无可重新检测的内容');
   }
 }
 
@@ -524,6 +661,7 @@ const resetDetection = () => {
   batchResults.value = [];
   batchFiles.value = [];
   currentIndex.value = 0;
+  lastImageFile.value = null;
   if (originalImage.value) URL.revokeObjectURL(originalImage.value);
   originalImage.value = "";
 };
@@ -533,6 +671,8 @@ const performSingleDetection = async (file) => {
   try {
     isDetecting.value = true;
     resetDetection();
+    lastImageFile.value = file;
+    lastVideoFile.value = null;
     const formData = new FormData();
     formData.append("file", file);
     formData.append("model_name", selectedModel.value);
@@ -603,6 +743,8 @@ const performVideoDetection = async (file) => {
   try {
     isDetecting.value = true;
     videoResult.value = null;
+    lastVideoFile.value = file;
+    lastImageFile.value = null;
     const formData = new FormData();
     formData.append("file", file);
     formData.append("model_name", selectedModel.value);
@@ -1137,4 +1279,28 @@ function roundRect(ctx, x, y, w, h, r) {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* 报告弹窗 */
+.report-content { display: flex; flex-direction: column; gap: 16px; }
+.report-header { display: flex; justify-content: space-between; align-items: center; }
+.report-mode { font-size: 15px; font-weight: 600; color: var(--primary-color); }
+.report-model { font-size: 12px; color: var(--text-secondary); }
+.report-images { display: flex; gap: 12px; }
+.report-img-box { flex: 1; min-width: 0; }
+.report-img-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.report-img { width: 100%; border-radius: 8px; object-fit: contain; max-height: 240px; background: #f3f4f6; }
+.report-video { width: 100%; border-radius: 8px; background: #000; }
+.report-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.report-stat { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; background: #f9fafb; border-radius: 8px; }
+.rs-val { font-size: 18px; font-weight: 700; color: var(--primary-color); }
+.rs-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.report-section-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.report-summary { display: flex; flex-direction: column; gap: 4px; }
+.report-summary-item { display: flex; justify-content: space-between; padding: 5px 10px; background: #f9fafb; border-radius: 6px; font-size: 13px; }
+.report-summary-count { font-weight: 600; color: var(--primary-color); }
+.report-species { display: flex; flex-direction: column; gap: 4px; }
+.report-species-item { display: flex; justify-content: space-between; padding: 5px 10px; background: #f9fafb; border-radius: 6px; }
+.rs-name { font-size: 13px; color: var(--text-primary); }
+.rs-conf { font-size: 12px; font-weight: 500; color: var(--primary-color); }
+.report-footer { font-size: 11px; color: var(--text-secondary); text-align: right; padding-top: 8px; border-top: 1px solid #f3f4f6; }
 </style>

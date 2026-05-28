@@ -43,13 +43,13 @@
     </div>
 
     <div class="action-cards">
-      <div class="action-card" @click="$emit('redetect')">
+      <div v-if="mode !== 'camera'" class="action-card" @click="$emit('redetect')">
         <el-icon class="action-icon"><Refresh /></el-icon>
         <span class="action-label">重新检测</span>
       </div>
-      <div class="action-card action-card--primary">
+      <div class="action-card action-card--primary" @click="$emit('generate-report')">
         <el-icon class="action-icon"><Document /></el-icon>
-        <span class="action-label">查看完整报告</span>
+        <span class="action-label">生成报告</span>
       </div>
     </div>
   </div>
@@ -63,9 +63,10 @@ const props = defineProps({
   modelStatus: { type: Object, default: () => ({}) },
   detectionResult: { type: Object, default: null },
   selectedName: { type: String, default: null },
+  mode: { type: String, default: 'image' },
 });
 
-defineEmits(["redetect", "select-pest"]);
+defineEmits(["redetect", "generate-report", "select-pest"]);
 
 const uniqueSpecies = computed(() => {
   if (!props.detectionResult?.boxes?.length) return [];
