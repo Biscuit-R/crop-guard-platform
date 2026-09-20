@@ -1,0 +1,51 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.egg
+
+# ---------- 环境变量 ----------
+.env
+.env.local
+
+# ---------- 编辑器 / 工具 ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------- 操作系统 ----------
+.DS_Store
+Thumbs.db
+
+# ---------- Node ----------
+node_modules/
+dist/
+
+# ---------- 运行时产物（勿入库）----------
+backend/static/uploads/
+backend/static/results/
+backend/static/result_videos/
+backend/static/videos/
+backend/static/forum_images/
+backend/temp/
+backend/logs/
+*.log
+storage/
+
+# ---------- 模型与训练产物 ----------
+backend/models/*.pt
+backend/runs/
+training/runs/
+training/versions.json
+
+# ---------- 数据集（体积大）----------
+database/images/
+database/labels/
+database/filtered_dataset/
+*.zip
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
