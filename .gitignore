@@ -1,51 +1,35 @@
-# ---------- Python ----------
+# 秘密 —— 只有 .env.example 进版本库
+.env
+*.env
+!.env.example
+
+# Python
 __pycache__/
 *.py[cod]
-*.egg-info/
 .venv/
 venv/
-*.egg
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
 
-# ---------- 环境变量 ----------
-.env
-.env.local
-
-# ---------- 编辑器 / 工具 ----------
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# ---------- 操作系统 ----------
-.DS_Store
-Thumbs.db
-
-# ---------- Node ----------
+# 前端
 node_modules/
 dist/
+.vite/
 
-# ---------- 运行时产物（勿入库）----------
-backend/static/uploads/
-backend/static/results/
-backend/static/result_videos/
-backend/static/videos/
-backend/static/forum_images/
-backend/temp/
-backend/logs/
-*.log
-storage/
+# 模型权重 / 语料产物（大文件，不进库）
+*.pt
+*.onnx
+*.pth
+models/
 
-# ---------- 模型与训练产物 ----------
-backend/models/*.pt
-backend/runs/
-training/runs/
-training/versions.json
+# 上传/推理产物
+uploads/
+outputs/
 
-# ---------- 数据集（体积大）----------
-database/images/
-database/labels/
-database/filtered_dataset/
-*.zip
-
-# ---------- Jupyter ----------
-.ipynb_checkpoints/
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

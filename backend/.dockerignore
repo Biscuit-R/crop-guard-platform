@@ -1,0 +1,7 @@
+# .env 含真实 key，绝不能进镜像层（COPY . . 会带上它）
+.env
+.venv
+.pytest_cache
+__pycache__
+**/__pycache__
+tests

@@ -1,0 +1,94 @@
+# 本地开发编排。
+#
+# 与归档的差异（见 docs/decisions.md 基线表）：
+#   - postgres 换成 pgvector 版本（D8）
+#   - 新增 backend 服务
+#   - Redis 保持绑 127.0.0.1（归档这条本来就是对的）
+#
+# ⚠️ 已知的部署遗留项（默认凭据 / 浮动标签 / 端口暴露面）推迟到阶段 5，
+#    处置清单在 docs/decisions.md 末尾。
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_USER: crop_user
+      POSTGRES_PASSWORD: crop_password
+      POSTGRES_DB: crop_guard_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crop_user -d crop_guard_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      # 容器内互访走服务名与容器内端口，不是宿主机映射出去的端口。
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio:9000
+      # BGE 模型容器内没有缓存，首次加载需要走镜像源（HF 直连不通）
+      HF_ENDPOINT: https://hf-mirror.com
+      HF_HUB_OFFLINE: "0"
+      # DEEPSEEK_API_KEY 等敏感项不写死在 compose —— 由 .env 注入（compose 自动读取项目根 .env）
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  miniodata:

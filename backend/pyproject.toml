@@ -1,0 +1,44 @@
+[project]
+name = "crop-guard-backend"
+version = "0.1.0"
+description = "作物虫害检测与知识问答平台 · 后端"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "redis>=5.0",
+    "minio>=7.2",
+    "alembic>=1.13",
+    "python-multipart>=0.0.12",
+    "torch>=2.14.1",
+    "sentence-transformers>=6.1.0",
+    "pgvector>=0.5.0",
+    "openai>=3.24.0",
+    "transformers<5.18",
+    "pyjwt>=2.15.1",
+    "bcrypt>=5.0.0",
+    "ultralytics>=8.4.174",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+]
+
+# torch 用 CPU 版索引：默认源在 Windows 会拉 CUDA 版（2.5GB+），本机无 GPU 纯浪费
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
