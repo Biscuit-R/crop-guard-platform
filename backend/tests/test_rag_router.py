@@ -7,9 +7,11 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.auth.deps import get_redis
 from app.modules.rag.router import get_qa
 from app.rag.qa import QAResult
 from app.rag.retriever import Retrieved
+from tests.test_auth_service import FakeRedis
 
 client = TestClient(app)
 
@@ -17,6 +19,9 @@ _HIT = Retrieved("rice_leaf_roller", "稻纵卷叶螟", 2, "【稻纵卷叶螟·
 
 
 def test_ask_returns_qa_result_fields():
+    # 会话记忆走 get_redis 依赖：必须换假件，否则测试隐式依赖本机 6380 的真 Redis
+    #（Windows 本机有容器映射所以一直碰巧通过，CI 无 Redis 才暴露）
+    app.dependency_overrides[get_redis] = lambda: FakeRedis()
     app.dependency_overrides[get_qa] = lambda: lambda q, **kw: QAResult(
         mode="confident", answer="测试答案", sources=[_HIT]
     )
