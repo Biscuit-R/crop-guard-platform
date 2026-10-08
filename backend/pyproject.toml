@@ -15,6 +15,10 @@ dependencies = [
     "alembic>=1.13",
     "python-multipart>=0.0.12",
     "torch>=2.14.1",
+    # 直接声明以便 tool.uv.sources 生效（传递依赖不吃 sources）：
+    # 必须与 torch 同走 CPU 源，否则 PyPI 的 Linux wheel 对 CUDA torch 编译，
+    # import 即报 operator torchvision::nms does not exist（CI 实测）
+    "torchvision>=0.29.1",
     "sentence-transformers>=6.1.0",
     "pgvector>=0.5.0",
     "openai>=3.24.0",
@@ -38,6 +42,9 @@ explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
+# torchvision 必须同源：PyPI 的 Linux wheel 对着 CUDA 版 torch 编译，
+# 装到 CPU torch 上 import 即报 operator torchvision::nms does not exist（CI 实测）
+torchvision = { index = "pytorch-cpu" }
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

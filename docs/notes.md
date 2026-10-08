@@ -173,3 +173,19 @@
 > ⬆ 最后一句只记了你的决策，没记你的理由。面试被追问「为什么不修」时，候选答法（供你挑/改）：指代消解收益已被量化（4 对全中），口语规范化是换词、换的词必须过评测验证，本切片的验收口径是「建立评测、量化收益」，调 prompt 属于后续专项——你当时的真实想法请自己补。
 >
 > 后续专项方向（未拍板，仅记录）：受限改写（只消解指代、不动用词）/ rerank / 扩评测集到口语规范化占多数的比例再定。
+
+---
+
+### 2026-10-08 · 首次推送与 CI 首跑：一次教科书级的「供应链断供」实录
+
+- **事件经过** —— v2.0.0 推送 GitHub（`Biscuit-R/crop-guard-platform`，main 以 force 覆盖、v1 全史备份为 `v1-legacy` 分支、tag v2.0.0），CI 首跑两 job 全红，加上本地容器一失败，共三个故障，全是「只在干净环境才暴露」的问题：
+  1. **backend job**：测试收集期炸——torch（pytorch-cpu 源）与 torchvision（PyPI 源）混源错配，PyPI 的 Linux wheel 对 CUDA 版 torch 编译，装到 CPU torch 上 `operator torchvision::nms does not exist`。本机 Windows 碰巧能加载，所以本地 108 passed 毫无症状
+  2. **容器**：opencv-python（ultralytics 传递依赖）在 slim 镜像缺 X11 系统库（libxcb.so.1 等）——同类问题第二次现身
+  3. **compose job**：`minio/minio` 拉不到。逐层诊断（Hub tag → Hub digest → quay.io → ghcr.io → registry API 匿名 token 探测）后坐实：**MinIO 官方已将社区镜像全渠道下架**（2025 社区版转订阅制的结果）——不是限流、不是网络、是仓库没了。本机能跑纯靠 9 小时前的本地缓存
+- **处置（用户拍板方案 A）** —— ①torchvision 提为直接依赖并同锁 pytorch-cpu 源（uv.lock 重锁）；②Dockerfile 运行层补装 libgl1/libglib2.0-0/libxcb1；③新增 `docker-compose.ci.yml` 以 compose 的 `!override` 语义摘除 backend 对 minio 的依赖，CI 编排验证收窄为 postgres+redis+backend，base 文件仍全量 config 校验，本机编排不变
+- **哪里帮上忙** —— CI 首跑即抓出两个「本机永远发现不了」的问题（混源错配、镜像下架），用行动演示了「本地全绿 ≠ 可复现」——CI 存在的意义一次讲清。诊断过程本身是完整的方法论示范：先分清「坏了」还是「没了」（错误信息逐层证伪：pull denied ≠ 限流 ≠ 网络不通）
+- **哪里添乱** ——（本次过程性踩坑两处：①quay.io/minio/minio 盲目当替代源，实测 401 才知同样下架，若先查再改可省一轮；②uv 的 `tool.uv.sources` 对传递依赖不生效，torchvision 必须提为直接依赖——锁文件重解析两次）
+- **我的判断** ——（等用户口述）
+- **面试可讲点** —— 现代软件 = 自写 5% + 引用 95%，供应链风险是工程标配考题；锁版本（uv.lock / 镜像 pin）防「变质」、分层诊断防「误判」、降级隔离（CI override）保「活体」；「外部依赖被供应商单方面撤掉」不是一个 bug，是一类风险的名字
+
+> ⬆ 最后的「我的判断」与「面试可讲点」请用户自己过一遍——尤其「为什么选 CI 收窄而不是换 bitnamilegacy/换存储组件」这个取舍，是你拍的板，理由该由你写。

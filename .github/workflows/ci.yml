@@ -24,15 +24,19 @@ jobs:
 
   compose:
     # 这一条才是骨架真正的验收：编排文件写的服务能不能起来。
+    # 用 -f 叠加 docker-compose.ci.yml：CI 的匿名 runner 拉不到 minio/minio
+    # （MinIO 官方下架，2026-10-08），编排验证收窄为 postgres + redis + backend。
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: 校验 compose 文件
-        run: docker compose config -q
+        run: |
+          docker compose config -q
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml config -q
 
       - name: 起依赖容器
-        run: docker compose up -d postgres redis minio
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d postgres redis
 
       - name: 等待依赖健康
         run: |
@@ -47,12 +51,12 @@ jobs:
 
       - name: 起后端并打健康检查
         run: |
-          docker compose up -d backend
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d backend
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:8000/health; then exit 0; fi
             sleep 3
           done
-          docker compose logs backend
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml logs backend
           exit 1
 
       - name: 失败时导出日志

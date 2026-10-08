@@ -14,6 +14,12 @@ FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
+# opencv-python（ultralytics 传递依赖）在无 GUI 的 slim 镜像缺系统库：
+# libxcb1=libxcb.so.1（CI/容器实测）、libgl1=libGL.so.1、libglib2.0-0=glib
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libxcb1 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
 

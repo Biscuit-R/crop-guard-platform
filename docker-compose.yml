@@ -36,6 +36,10 @@ services:
       retries: 10
 
   minio:
+    # ⚠️ 供应链事件（2026-10-08）：MinIO 官方已将社区镜像全渠道下架（Docker Hub
+    # tag 与 digest 均 401、quay.io 清空、ghcr 无发布）—— 2025 社区版转订阅制的结果。
+    # 本地能跑靠已有缓存；CI 场景见 docker-compose.ci.yml（不起 minio）。
+    # 长期处置（换对象存储或可信镜像源）在 decisions.md 遗留清单。
     image: minio/minio
     command: server /data --console-address ":9001"
     environment:

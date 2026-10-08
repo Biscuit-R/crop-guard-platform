@@ -1,0 +1,16 @@
+# CI 场景 override：与 docker-compose.yml 叠加使用（-f 两份）。
+#
+# 为什么存在：MinIO 官方已将镜像全渠道下架（2026-10-08 供应链事件，
+# 见 docker-compose.yml 注释），CI 的匿名 runner 拉不到 minio/minio。
+# CI 的验证目标是「依赖声明可复现 + 服务能编排启动」，收窄为
+# postgres + redis + backend —— base 文件仍被 `docker compose config` 全量校验。
+#
+# depends_on 用 !override 整体替换（compose 默认对 map 是合并语义，
+# 不替换的话 minio 会被依赖链自动拉起，pull 即失败）。
+services:
+  backend:
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
